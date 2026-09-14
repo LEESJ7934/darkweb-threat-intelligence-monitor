@@ -3,6 +3,7 @@ import logging
 from django.shortcuts import render
 from django.views.decorators.http import require_safe
 from governance.django_controls import protected_view
+from governance.audit_review import review as review_audit
 
 from . import dashboard
 
@@ -43,3 +44,11 @@ def event_detail(request, document_id):
         context["database_error"] = dashboard.DATABASE_ERROR
         LOGGER.warning("Event detail data unavailable")
     return render(request, "mongoDbConnect/detail.html", context, status=status)
+
+
+@protected_view("governance_review", staff_only=True)
+@require_safe
+def governance_review(request):
+    """Security Admin-only, read-only aggregate audit review."""
+    result = review_audit()
+    return render(request, "mongoDbConnect/governance_review.html", {"review": result})

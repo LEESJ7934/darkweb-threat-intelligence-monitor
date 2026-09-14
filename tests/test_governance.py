@@ -14,7 +14,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from crawling import models, storage
-from governance import audit, elk_check, policy, retention, runtime, sources
+from governance import audit, audit_review, elk_check, policy, retention, runtime, sources
 from elk.config import Config as ElkConfig, ElkError
 from scripts import apply_retention, check_governance, check_runtime_config
 from tests.test_storage import MemoryCollection, observation
@@ -600,11 +600,105 @@ with patch.dict(os.environ, {}, clear=True), \
      patch('socket.getaddrinfo', side_effect=AssertionError('DNS')), \
      patch('dotenv.load_dotenv', side_effect=AssertionError('env')), \
      patch('logging.FileHandler.__init__', side_effect=AssertionError('log file')):
-    from governance import policy, sources, audit, retention, runtime, elk_check
+    from governance import policy, sources, audit, audit_review, retention, runtime, elk_check
     assert sources.active_modules() == ('crawling.bitlock_crawler',)
 """
         result = subprocess.run([sys.executable, "-c", code], cwd=ROOT, capture_output=True, text=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stderr)
+
+
+class AuditReviewTests(OfflineCase):
+    def write_logs(self, directory, lines, *, rotated=None):
+        root = Path(directory)
+        root.mkdir(parents=True, exist_ok=True)
+        (root / "audit.jsonl").write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+        if rotated is not None:
+            (root / "audit.jsonl.1").write_text("\n".join(rotated) + "\n", encoding="utf-8")
+
+    def row(self, event="dashboard_access", category="dashboard", result="success", *, at=NOW, **extra):
+        return json.dumps({"timestamp": at.isoformat(), "event": event, "category": category,
+                           "result": result, "authenticated": True, **extra})
+
+    def test_review_ok_is_aggregate_only_and_reads_rotation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.write_logs(directory,
+                            [self.row(user_hash="PRIVATE_USER_HASH", document_hash="PRIVATE_DOCUMENT_HASH")],
+                            rotated=[self.row(event="login_failure", category="authentication", result="denied")])
+            result = audit_review.review(directory, now=NOW)
+        self.assertEqual(result["status"], "OK")
+        self.assertEqual(result["files_reviewed"], 2)
+        self.assertEqual(result["counts"]["records_in_window"], 2)
+        self.assertEqual(result["counts"]["login_failure"], 1)
+        self.assertNotIn("PRIVATE", repr(result))
+        self.assertNotIn("user_hash", repr(result))
+        self.assertNotIn("document_hash", repr(result))
+
+    def test_login_failure_threshold_causes_attention(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rows = [self.row(event="login_failure", category="authentication", result="denied") for _ in range(5)]
+            self.write_logs(directory, rows)
+            result = audit_review.review(directory, now=NOW)
+        self.assertEqual(result["status"], "ATTENTION")
+        self.assertTrue(result["breaches"]["login_failure"])
+
+    def test_denied_access_threshold_causes_attention(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rows = [self.row(category="event_detail", result="denied") for _ in range(5)]
+            self.write_logs(directory, rows)
+            result = audit_review.review(directory, now=NOW)
+        self.assertEqual(result["counts"]["denied_access"], 5)
+        self.assertTrue(result["breaches"]["denied_access"])
+
+    def test_any_error_and_retention_error_are_attention(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.write_logs(directory, [self.row(event="retention_execution", category="retention", result="error")])
+            result = audit_review.review(directory, now=NOW)
+        self.assertEqual(result["counts"]["error"], 1)
+        self.assertEqual(result["counts"]["retention_error"], 1)
+        self.assertTrue(result["breaches"]["error"])
+        self.assertTrue(result["breaches"]["retention_error"])
+
+    def test_malformed_invalid_and_future_timestamp_are_attention(self):
+        with tempfile.TemporaryDirectory() as directory:
+            future = NOW + timedelta(hours=1)
+            self.write_logs(directory, ["not json", json.dumps(["array"]),
+                                        self.row(at=future), json.dumps({"timestamp": NOW.isoformat()})])
+            result = audit_review.review(directory, now=NOW)
+        self.assertEqual(result["counts"]["malformed"], 4)
+        self.assertEqual(result["status"], "ATTENTION")
+
+    def test_old_valid_records_are_outside_window(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.write_logs(directory, [self.row(event="login_failure", category="authentication", result="denied",
+                                                 at=NOW - timedelta(days=31))])
+            result = audit_review.review(directory, now=NOW)
+        self.assertEqual(result["counts"]["records_in_window"], 0)
+        self.assertEqual(result["status"], "OK")
+
+    def test_review_is_read_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.write_logs(directory, [self.row()])
+            path = Path(directory) / "audit.jsonl"
+            before = path.read_bytes()
+            audit_review.review(directory, now=NOW)
+            self.assertEqual(path.read_bytes(), before)
+
+    def test_invalid_days_and_thresholds_rejected(self):
+        for days in (0, -1, 3651, 1.5, "30"):
+            with self.assertRaises(audit_review.AuditReviewError):
+                audit_review.review(days=days, now=NOW)
+        with self.assertRaises(audit_review.AuditReviewError):
+            audit_review.review(now=NOW, thresholds={"login_failure": 1})
+
+    def test_cli_json_contains_no_raw_identifier_fields(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.write_logs(directory, [self.row(user_hash="PRIVATE_USER_HASH")])
+            result = subprocess.run([sys.executable, "scripts/review_audit.py", "--log-dir", directory, "--json"],
+                                    cwd=ROOT, capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("PRIVATE", result.stdout)
+        self.assertNotIn("user_hash", result.stdout)
+
 
 
 class ConfigurationAndELKTests(OfflineCase):

@@ -28,6 +28,8 @@ class AccessControlTests(TestCase):
     def setUpTestData(cls):
         cls.password = "synthetic-only-" + "credential"
         cls.user = get_user_model().objects.create_user(username="offline-analyst", password=cls.password)
+        cls.admin = get_user_model().objects.create_user(username="offline-security-admin", password=cls.password,
+                                                         is_staff=True)
 
     def setUp(self):
         self.db = ReadDatabase([sample()])
@@ -172,6 +174,61 @@ class AccessControlTests(TestCase):
         self.assertEqual(set(fields), {"category", "authenticated", "user_id", "document_id", "result", "status"})
         self.assertNotIn("PRIVATEQUERY", repr(fields))
         self.assertNotIn("company_url", repr(fields))
+
+
+    def synthetic_review(self, status="OK"):
+        return {"reviewed_at": "2026-09-14T00:00:00+00:00", "window_days": 30, "status": status,
+                "counts": {"records_in_window": 4, "login_failure": 1, "denied_access": 0,
+                           "error": 0, "retention_error": 0, "malformed": 0},
+                "thresholds": {"login_failure": 5, "denied_access": 5, "error": 1,
+                               "retention_error": 1, "malformed": 1},
+                "breaches": {"login_failure": False, "denied_access": False, "error": False,
+                             "retention_error": False, "malformed": False},
+                "files_reviewed": 1, "privacy": "aggregate_only_no_raw_identifiers"}
+
+    def test_governance_review_anonymous_redirects_without_reviewing_files(self):
+        with patch("mongoDbConnect.views.review_audit", side_effect=AssertionError("must not review")):
+            response = self.client.get(reverse("governance_review"))
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith("/login/"))
+        self.assertEqual(self.audit.call_args.args[0], "governance_review_access")
+        self.assertEqual(self.audit.call_args.kwargs["result"], "denied")
+
+    def test_governance_review_analyst_forbidden_without_reviewing_files(self):
+        self.client.force_login(self.user)
+        with patch("mongoDbConnect.views.review_audit", side_effect=AssertionError("must not review")):
+            response = self.client.get(reverse("governance_review"))
+        self.assertEqual(response.status_code, 403)
+        self.assertContains(response, "Security Admin role is required.", status_code=403)
+        self.assertEqual(self.audit.call_args.args[0], "governance_review_access")
+
+    def test_governance_review_security_admin_gets_aggregate_page(self):
+        self.client.force_login(self.admin)
+        with patch("mongoDbConnect.views.review_audit", return_value=self.synthetic_review()) as review:
+            response = self.client.get(reverse("governance_review"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Audit Review")
+        self.assertContains(response, "aggregate_only_no_raw_identifiers")
+        self.assertNotContains(response, "user_hash")
+        self.assertNotContains(response, "document_hash")
+        review.assert_called_once_with()
+        self.assertEqual(self.audit.call_args.args[0], "governance_review_access")
+        self.assertEqual(self.audit.call_args.kwargs["result"], "success")
+
+    def test_governance_review_post_is_disallowed(self):
+        self.client.force_login(self.admin)
+        with patch("mongoDbConnect.views.review_audit", side_effect=AssertionError("must not review")):
+            response = self.client.post(reverse("governance_review"))
+        self.assertEqual(response.status_code, 405)
+
+    def test_governance_review_link_is_visible_only_to_security_admin(self):
+        for user, visible in ((self.user, False), (self.admin, True)):
+            self.client.force_login(user)
+            response = self.client.get("/")
+            if visible:
+                self.assertContains(response, "Audit Review")
+            else:
+                self.assertNotContains(response, "Audit Review")
 
     def test_existing_legacy_secret_is_redacted_on_dashboard_surface(self):
         self.client.force_login(self.user)

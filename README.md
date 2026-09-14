@@ -107,6 +107,7 @@ flowchart LR
 - [`governance/data_handling.md`](governance/data_handling.md)
 - [`governance/incident_response.md`](governance/incident_response.md)
 - [`governance/control_matrix.md`](governance/control_matrix.md)
+- [`docs/isms_p/00_scope.md`](docs/isms_p/00_scope.md) ~ [`07_final_assessment.md`](docs/isms_p/07_final_assessment.md): ISMS-P 통제항목 기반 모의진단 산출물
 
 ## 3. 데이터 흐름
 
@@ -223,6 +224,15 @@ python scripts/check_elk_pipeline.py --wait 120
 python scripts/check_governance.py
 ```
 
+감사로그 정기 검토 예제(기본 최근 30일, aggregate only):
+
+```powershell
+python scripts/review_audit.py
+python scripts/review_audit.py --days 30 --json
+```
+
+Django에서는 `is_staff=True` 계정만 `/governance/audit-review/`를 조회할 수 있습니다. 일반 Analyst는 dashboard/event detail만 조회합니다.
+
 retention 대상 수만 확인하는 DRY RUN:
 
 ```powershell
@@ -250,13 +260,15 @@ python scripts/check_runtime_config.py
 git diff --check
 ```
 
-현재 검증 기준:
+기존 Day15 검증 기준(이번 ISMS-P 확장 전 baseline):
 
 - root unittest: **266 PASS**
 - Django `mongoDbConnect`: **77 PASS**
 - JavaScript projection reference test: **14 PASS**
 - Django system check: **0 issues**
 - secret/runtime/diff checks: PASS
+
+이번 ISMS-P 확장에서는 Audit Review 단위 테스트 9개와 Django RBAC/Audit Review 테스트 5개를 추가했습니다. 최종 PASS 수는 로컬 `.venv`에서 위 회귀 명령을 다시 실행한 뒤 갱신합니다.
 
 자동 테스트만으로 완료 판정하지 않고 실제 PC에서 다음 E2E도 확인했습니다.
 

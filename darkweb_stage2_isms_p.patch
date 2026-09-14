@@ -1,0 +1,966 @@
+diff -ruN '--exclude=__pycache__' a/DjangoProject/mongoDbConnect/static/css/dashboard.css b/DjangoProject/mongoDbConnect/static/css/dashboard.css
+--- a/DjangoProject/mongoDbConnect/static/css/dashboard.css	2026-09-14 04:40:39.000000000 +0000
++++ b/DjangoProject/mongoDbConnect/static/css/dashboard.css	2026-09-14 05:19:28.216312116 +0000
+@@ -84,3 +84,9 @@
+ .alert-table{min-width:1000px}.status-label{font-size:10px;border:1px solid #d9e2eb;padding:2px 6px;border-radius:4px;display:inline-block}
+ @media(max-width:1150px){.filter-form{grid-template-columns:2fr 1fr 1fr}.summary-grid{gap:10px}.summary-card{padding:14px}.page-shell{padding:24px}.header-inner{padding:18px 24px}}
+ @media(max-width:720px){.header-inner{padding:15px 18px}.page-shell{padding:22px 16px}.brand{font-size:15px}.read-only{padding:4px 9px}.page-heading{align-items:flex-start}h1{font-size:22px}.filter-form{grid-template-columns:1fr 1fr;padding:16px}.filter-field.search{grid-column:1/-1}.filter-actions{grid-column:1/-1}.summary-grid{grid-template-columns:repeat(2,1fr)}.summary-card:last-child{grid-column:1/-1}.summary-value{font-size:27px}.chart-grid,.detail-grid{grid-template-columns:1fr}.panel-heading{padding:14px 16px}.pagination{align-items:flex-start;flex-direction:column}.site-footer{padding:5px 16px 22px}.metadata{grid-template-columns:90px minmax(0,1fr);padding:16px}.chart{padding:12px 16px}}
++.header-actions{display:flex;align-items:center;gap:12px}
++.header-link{color:#dce8ed;font-size:12px;border-bottom:1px solid #668399}
++.review-status{display:inline-block;padding:7px 13px;border-radius:6px;font-weight:750;font-size:12px;letter-spacing:.04em}
++.review-status.ok{background:#e7f3ee;color:#32745c}.review-status.attention{background:#fff0e3;color:#a95820}
++.review-grid{grid-template-columns:repeat(5,1fr)}
++@media(max-width:720px){.header-actions{gap:8px}.header-link{display:none}.review-grid{grid-template-columns:repeat(2,1fr)}}
+diff -ruN '--exclude=__pycache__' a/DjangoProject/mongoDbConnect/templates/mongoDbConnect/base.html b/DjangoProject/mongoDbConnect/templates/mongoDbConnect/base.html
+--- a/DjangoProject/mongoDbConnect/templates/mongoDbConnect/base.html	2026-09-14 04:40:39.000000000 +0000
++++ b/DjangoProject/mongoDbConnect/templates/mongoDbConnect/base.html	2026-09-14 05:19:28.091306559 +0000
+@@ -12,12 +12,17 @@
+   <header class="site-header">
+     <div class="header-inner">
+       <a class="brand" href="{% url 'latest_data_table' %}"><span class="brand-mark">TI</span><span>위협 인텔리전스<span class="brand-caption">ANALYST DASHBOARD</span></span></a>
+-      <span class="read-only"><span aria-hidden="true">●</span> 조회 전용</span>
+-      {% if request.user.is_authenticated %}
+-      <form method="post" action="{% url 'logout' %}">
+-        {% csrf_token %}<button type="submit">로그아웃</button>
+-      </form>
+-      {% endif %}
++      <div class="header-actions">
++        <span class="read-only"><span aria-hidden="true">●</span> 조회 전용</span>
++        {% if request.user.is_staff %}
++        <a class="header-link" href="{% url 'governance_review' %}">Audit Review</a>
++        {% endif %}
++        {% if request.user.is_authenticated %}
++        <form method="post" action="{% url 'logout' %}">
++          {% csrf_token %}<button type="submit">로그아웃</button>
++        </form>
++        {% endif %}
++      </div>
+     </div>
+   </header>
+   <main class="page-shell">{% block content %}{% endblock %}</main>
+diff -ruN '--exclude=__pycache__' a/DjangoProject/mongoDbConnect/templates/mongoDbConnect/governance_review.html b/DjangoProject/mongoDbConnect/templates/mongoDbConnect/governance_review.html
+--- a/DjangoProject/mongoDbConnect/templates/mongoDbConnect/governance_review.html	1970-01-01 00:00:00.000000000 +0000
++++ b/DjangoProject/mongoDbConnect/templates/mongoDbConnect/governance_review.html	2026-09-14 05:19:28.216312116 +0000
+@@ -0,0 +1,37 @@
++{% extends "mongoDbConnect/base.html" %}
++{% block title %}Audit Review · 위협 인텔리전스{% endblock %}
++{% block content %}
++<section class="page-heading">
++  <div>
++    <div class="eyebrow">SECURITY ADMIN · READ ONLY</div>
++    <h1>Audit Review</h1>
++    <p>최근 {{ review.window_days }}일의 감사로그를 원문 식별자 없이 집계합니다.</p>
++  </div>
++  <span class="review-status {% if review.status == 'ATTENTION' %}attention{% else %}ok{% endif %}">{{ review.status }}</span>
++</section>
++
++<div class="summary-grid review-grid">
++  <article class="summary-card"><div class="summary-label">검토 레코드</div><div class="summary-value">{{ review.counts.records_in_window }}</div><div class="summary-caption">UTC window</div></article>
++  <article class="summary-card"><div class="summary-label">로그인 실패</div><div class="summary-value">{{ review.counts.login_failure }}</div><div class="summary-caption">기준 {{ review.thresholds.login_failure }}</div></article>
++  <article class="summary-card"><div class="summary-label">접근 거부</div><div class="summary-value">{{ review.counts.denied_access }}</div><div class="summary-caption">기준 {{ review.thresholds.denied_access }}</div></article>
++  <article class="summary-card"><div class="summary-label">오류</div><div class="summary-value">{{ review.counts.error }}</div><div class="summary-caption">기준 {{ review.thresholds.error }}</div></article>
++  <article class="summary-card"><div class="summary-label">형식 오류</div><div class="summary-value">{{ review.counts.malformed }}</div><div class="summary-caption">기준 {{ review.thresholds.malformed }}</div></article>
++</div>
++
++<section class="panel">
++  <div class="panel-heading"><div><h2>검토 기준</h2><div class="muted">원본 user/document hash와 요청 데이터는 이 화면에 출력하지 않습니다.</div></div></div>
++  <div class="table-scroll">
++    <table>
++      <thead><tr><th>항목</th><th>건수</th><th>Threshold</th><th>판정</th></tr></thead>
++      <tbody>
++        <tr><td>login_failure</td><td>{{ review.counts.login_failure }}</td><td>{{ review.thresholds.login_failure }}</td><td>{% if review.breaches.login_failure %}ATTENTION{% else %}OK{% endif %}</td></tr>
++        <tr><td>denied_access</td><td>{{ review.counts.denied_access }}</td><td>{{ review.thresholds.denied_access }}</td><td>{% if review.breaches.denied_access %}ATTENTION{% else %}OK{% endif %}</td></tr>
++        <tr><td>error</td><td>{{ review.counts.error }}</td><td>{{ review.thresholds.error }}</td><td>{% if review.breaches.error %}ATTENTION{% else %}OK{% endif %}</td></tr>
++        <tr><td>retention_error</td><td>{{ review.counts.retention_error }}</td><td>{{ review.thresholds.retention_error }}</td><td>{% if review.breaches.retention_error %}ATTENTION{% else %}OK{% endif %}</td></tr>
++        <tr><td>malformed</td><td>{{ review.counts.malformed }}</td><td>{{ review.thresholds.malformed }}</td><td>{% if review.breaches.malformed %}ATTENTION{% else %}OK{% endif %}</td></tr>
++      </tbody>
++    </table>
++  </div>
++  <p class="panel-note">검토 시각 {{ review.reviewed_at }} · 파일 {{ review.files_reviewed }}개 · {{ review.privacy }}</p>
++</section>
++{% endblock %}
+diff -ruN '--exclude=__pycache__' a/DjangoProject/mongoDbConnect/tests_governance.py b/DjangoProject/mongoDbConnect/tests_governance.py
+--- a/DjangoProject/mongoDbConnect/tests_governance.py	2026-09-14 04:40:39.000000000 +0000
++++ b/DjangoProject/mongoDbConnect/tests_governance.py	2026-09-14 05:20:05.495595115 +0000
+@@ -28,6 +28,8 @@
+     def setUpTestData(cls):
+         cls.password = "synthetic-only-" + "credential"
+         cls.user = get_user_model().objects.create_user(username="offline-analyst", password=cls.password)
++        cls.admin = get_user_model().objects.create_user(username="offline-security-admin", password=cls.password,
++                                                         is_staff=True)
+ 
+     def setUp(self):
+         self.db = ReadDatabase([sample()])
+@@ -173,6 +175,61 @@
+         self.assertNotIn("PRIVATEQUERY", repr(fields))
+         self.assertNotIn("company_url", repr(fields))
+ 
++
++    def synthetic_review(self, status="OK"):
++        return {"reviewed_at": "2026-09-14T00:00:00+00:00", "window_days": 30, "status": status,
++                "counts": {"records_in_window": 4, "login_failure": 1, "denied_access": 0,
++                           "error": 0, "retention_error": 0, "malformed": 0},
++                "thresholds": {"login_failure": 5, "denied_access": 5, "error": 1,
++                               "retention_error": 1, "malformed": 1},
++                "breaches": {"login_failure": False, "denied_access": False, "error": False,
++                             "retention_error": False, "malformed": False},
++                "files_reviewed": 1, "privacy": "aggregate_only_no_raw_identifiers"}
++
++    def test_governance_review_anonymous_redirects_without_reviewing_files(self):
++        with patch("mongoDbConnect.views.review_audit", side_effect=AssertionError("must not review")):
++            response = self.client.get(reverse("governance_review"))
++        self.assertEqual(response.status_code, 302)
++        self.assertTrue(response.url.startswith("/login/"))
++        self.assertEqual(self.audit.call_args.args[0], "governance_review_access")
++        self.assertEqual(self.audit.call_args.kwargs["result"], "denied")
++
++    def test_governance_review_analyst_forbidden_without_reviewing_files(self):
++        self.client.force_login(self.user)
++        with patch("mongoDbConnect.views.review_audit", side_effect=AssertionError("must not review")):
++            response = self.client.get(reverse("governance_review"))
++        self.assertEqual(response.status_code, 403)
++        self.assertContains(response, "Security Admin role is required.", status_code=403)
++        self.assertEqual(self.audit.call_args.args[0], "governance_review_access")
++
++    def test_governance_review_security_admin_gets_aggregate_page(self):
++        self.client.force_login(self.admin)
++        with patch("mongoDbConnect.views.review_audit", return_value=self.synthetic_review()) as review:
++            response = self.client.get(reverse("governance_review"))
++        self.assertEqual(response.status_code, 200)
++        self.assertContains(response, "Audit Review")
++        self.assertContains(response, "aggregate_only_no_raw_identifiers")
++        self.assertNotContains(response, "user_hash")
++        self.assertNotContains(response, "document_hash")
++        review.assert_called_once_with()
++        self.assertEqual(self.audit.call_args.args[0], "governance_review_access")
++        self.assertEqual(self.audit.call_args.kwargs["result"], "success")
++
++    def test_governance_review_post_is_disallowed(self):
++        self.client.force_login(self.admin)
++        with patch("mongoDbConnect.views.review_audit", side_effect=AssertionError("must not review")):
++            response = self.client.post(reverse("governance_review"))
++        self.assertEqual(response.status_code, 405)
++
++    def test_governance_review_link_is_visible_only_to_security_admin(self):
++        for user, visible in ((self.user, False), (self.admin, True)):
++            self.client.force_login(user)
++            response = self.client.get("/")
++            if visible:
++                self.assertContains(response, "Audit Review")
++            else:
++                self.assertNotContains(response, "Audit Review")
++
+     def test_existing_legacy_secret_is_redacted_on_dashboard_surface(self):
+         self.client.force_login(self.user)
+         self.db.collections["leaked_data"].documents[0]["description"] = 'api_key="PRIVATE WORDS"'
+diff -ruN '--exclude=__pycache__' a/DjangoProject/mongoDbConnect/urls.py b/DjangoProject/mongoDbConnect/urls.py
+--- a/DjangoProject/mongoDbConnect/urls.py	2026-09-14 04:40:39.000000000 +0000
++++ b/DjangoProject/mongoDbConnect/urls.py	2026-09-14 05:19:28.091244456 +0000
+@@ -6,6 +6,7 @@
+ urlpatterns = [
+     path("", views.latest_data_table, name="latest_data_table"),
+     path("events/<str:document_id>/", views.event_detail, name="event_detail"),
++    path("governance/audit-review/", views.governance_review, name="governance_review"),
+     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+ ]
+diff -ruN '--exclude=__pycache__' a/DjangoProject/mongoDbConnect/views.py b/DjangoProject/mongoDbConnect/views.py
+--- a/DjangoProject/mongoDbConnect/views.py	2026-09-14 04:40:39.000000000 +0000
++++ b/DjangoProject/mongoDbConnect/views.py	2026-09-14 05:19:28.091058277 +0000
+@@ -3,6 +3,7 @@
+ from django.shortcuts import render
+ from django.views.decorators.http import require_safe
+ from governance.django_controls import protected_view
++from governance.audit_review import review as review_audit
+ 
+ from . import dashboard
+ 
+@@ -43,3 +44,11 @@
+         context["database_error"] = dashboard.DATABASE_ERROR
+         LOGGER.warning("Event detail data unavailable")
+     return render(request, "mongoDbConnect/detail.html", context, status=status)
++
++
++@protected_view("governance_review", staff_only=True)
++@require_safe
++def governance_review(request):
++    """Security Admin-only, read-only aggregate audit review."""
++    result = review_audit()
++    return render(request, "mongoDbConnect/governance_review.html", {"review": result})
+diff -ruN '--exclude=__pycache__' a/README.md b/README.md
+--- a/README.md	2026-09-14 04:40:39.000000000 +0000
++++ b/README.md	2026-09-14 05:23:34.559487944 +0000
+@@ -106,6 +106,7 @@
+ - [`governance/data_handling.md`](governance/data_handling.md)
+ - [`governance/incident_response.md`](governance/incident_response.md)
+ - [`governance/control_matrix.md`](governance/control_matrix.md)
++- [`docs/isms_p/00_scope.md`](docs/isms_p/00_scope.md) ~ [`07_final_assessment.md`](docs/isms_p/07_final_assessment.md): ISMS-P 통제항목 기반 모의진단 산출물
+ 
+ ## 3. 데이터 흐름
+ 
+@@ -222,6 +223,15 @@
+ python scripts/check_governance.py
+ ```
+ 
++감사로그 정기 검토 예제(기본 최근 30일, aggregate only):
++
++```powershell
++python scripts/review_audit.py
++python scripts/review_audit.py --days 30 --json
++```
++
++Django에서는 `is_staff=True` 계정만 `/governance/audit-review/`를 조회할 수 있습니다. 일반 Analyst는 dashboard/event detail만 조회합니다.
++
+ retention 대상 수만 확인하는 DRY RUN:
+ 
+ ```powershell
+@@ -249,7 +259,7 @@
+ git diff --check
+ ```
+ 
+-현재 검증 기준:
++기존 Day15 검증 기준(이번 ISMS-P 확장 전 baseline):
+ 
+ - root unittest: **266 PASS**
+ - Django `mongoDbConnect`: **77 PASS**
+@@ -257,6 +267,8 @@
+ - Django system check: **0 issues**
+ - secret/runtime/diff checks: PASS
+ 
++이번 ISMS-P 확장에서는 Audit Review 단위 테스트 9개와 Django RBAC/Audit Review 테스트 5개를 추가했습니다. 최종 PASS 수는 로컬 `.venv`에서 위 회귀 명령을 다시 실행한 뒤 갱신합니다.
++
+ 자동 테스트만으로 완료 판정하지 않고 실제 PC에서 다음 E2E도 확인했습니다.
+ 
+ - MongoDB → Monstache → Elasticsearch 최초 동기화
+diff -ruN '--exclude=__pycache__' a/docs/isms_p/00_scope.md b/docs/isms_p/00_scope.md
+--- a/docs/isms_p/00_scope.md	1970-01-01 00:00:00.000000000 +0000
++++ b/docs/isms_p/00_scope.md	2026-09-14 05:21:15.563051985 +0000
+@@ -0,0 +1,46 @@
++# ISMS-P 통제항목 기반 모의진단 범위
++
++> 이 문서는 교육·포트폴리오 목적의 **모의 보안진단 범위 정의서**입니다. 실제 ISMS-P 인증, 법률 준수 판정 또는 인증심사 수행을 의미하지 않습니다.
++
++## 1. 진단 목적
++
++다크웹 위협정보 모니터링 시스템의 기존 보안·개인정보 보호 통제를 ISMS-P 관점에서 구조화하고, 자산·데이터 흐름·위험·통제·증적을 연결하여 GAP을 식별하고 개선 우선순위를 정합니다.
++
++## 2. 진단 대상
++
++- Darkweb source registry 및 Selenium/Tor crawler
++- parser/normalizer와 MongoDB 저장 계층
++- `leaked_data`, `leak_history`, `alert_log`
++- risk classification 및 Telegram alert
++- Django analyst dashboard 및 인증 계정
++- governance audit / retention / runtime controls
++- Monstache → Elasticsearch → Kibana 분석 파이프라인
++- `.env` 기반 runtime secret/configuration 관리
++- Docker/로컬 실행환경의 프로젝트 수준 구성
++
++## 3. 제외 범위
++
++- 실제 피해기업·제3자 시스템의 내부 시스템
++- 유출 파일 원문 다운로드, 계정·비밀번호 사용, 침투행위
++- 조직 전체 인사·물리보안·법무·경영진 승인체계
++- 실제 법정 신고·통지 의무에 대한 최종 법률판단
++- 실제 인증기관의 ISMS-P 인증심사
++
++## 4. 진단 기준과 적용 방식
++
++현재 ISMS-P 체계의 101개 인증기준 전체를 적합 판정하지 않고, 본 시스템과 직접 연결되는 21개 항목을 집중 점검합니다. 판정은 `GOOD`, `PARTIAL`, `GAP`, `CONDITIONAL`로 구분하며 코드 존재만으로 운영 통제가 완성되었다고 보지 않습니다.
++
++- `GOOD`: 프로젝트 범위에서 구현·테스트·증적이 비교적 명확함
++- `PARTIAL`: 일부 구현은 있으나 운영절차·역할·증적 등 보완 필요
++- `GAP`: 현재 증거로 요구사항 충족을 설명하기 어려움
++- `CONDITIONAL`: 개인정보 처리 여부·법적 적용성 등 별도 판단이 필요한 항목
++
++## 5. 역할 가정
++
++- **Analyst**: 위협정보 dashboard 및 사건 상세 조회
++- **Security Admin**: Analyst 권한 + governance audit review
++- 운영자·개발자·법무·경영진 역할은 문서상 가정만 하며 실제 조직 통제로 주장하지 않습니다.
++
++## 6. 핵심 산출물
++
++`01_asset_inventory.md` → `02_data_flow.md` → `03_control_gap_matrix.md` → `04_risk_register.md` → `05_risk_treatment_plan.md` → `06_evidence_index.md` → `07_final_assessment.md`
+diff -ruN '--exclude=__pycache__' a/docs/isms_p/01_asset_inventory.md b/docs/isms_p/01_asset_inventory.md
+--- a/docs/isms_p/01_asset_inventory.md	1970-01-01 00:00:00.000000000 +0000
++++ b/docs/isms_p/01_asset_inventory.md	2026-09-14 05:21:15.564689157 +0000
+@@ -0,0 +1,25 @@
++# 정보자산 목록
++
++| ID | 정보자산 | 유형 | 주요 정보/기능 | 중요도 | 개인정보 관점 | 주요 통제 |
++|---|---|---|---|---|---|---|
++| A-01 | Darkweb Sources | 외부 정보원 | 게시글 metadata source | Medium | 우발적 개인정보 포함 가능 | source lifecycle |
++| A-02 | Selenium/Tor Crawler | Application | 수집 요청·HTML 처리 | High | 원문 과수집 주의 | allowlist, source registry |
++| A-03 | Parser/Normalizer | Application | metadata 정규화 | High | 최소수집 대상 | bounded metadata, redaction |
++| A-04 | Scheduler | Application | crawler 실행 제어 | Medium | 직접 저장 없음 | ACTIVE source only |
++| A-05 | `leaked_data` | Database | 사건 현재 상태 | High | incidental PII 가능 | allowlist, retention |
++| A-06 | `leak_history` | Database | field-level 변경 이력 | High | incidental PII 가능 | history sanitization, retention |
++| A-07 | `alert_log` | Database | 알림 처리·전송 상태 | High | 최소화된 event metadata | dedupe, redaction, retention |
++| A-08 | Django Dashboard | Application | 분석가 조회 화면 | High | 사건 metadata 표시 | authentication, RBAC, no-cache |
++| A-09 | Django Auth DB | Database | 계정/비밀번호 hash | High | 계정정보 | Django auth, CSRF |
++| A-10 | Telegram Integration | External Service | 임계치 이상 alert 전달 | Medium | 제한된 metadata 외부전송 | redaction, threshold, dedupe |
++| A-11 | Elasticsearch | Search/Data | 분석용 read model | High | allowlist metadata | strict projection/mapping |
++| A-12 | Kibana | Analysis UI | 검색·dashboard | High | 분석정보 노출 가능 | loopback/local lab, minimized fields |
++| A-13 | Audit Log | Security Log | 로그인·접근·retention 추적 | High | pseudonymous identifiers | hash, rotation, review |
++| A-14 | `.env` / Credentials | Secret | Mongo/Telegram/Django secret | Critical | 인증정보 | gitignore, secret scan, redaction |
++| A-15 | Docker/Host Runtime | Infrastructure | 서비스 실행환경 | High | 운영데이터 접근 가능 | runtime check, local exposure control |
++
++## 개인정보 관련 가정
++
++이 프로젝트는 개인정보 수집 자체를 목적으로 하지 않습니다. 그러나 외부 게시글의 `description` 등 metadata에 개인정보가 우발적으로 포함될 가능성을 완전히 배제하는 DLP를 구현한 것은 아니므로 `Intended PII: No / Incidental PII possibility: Yes`로 평가합니다.
++
++자산 중요도는 포트폴리오용 상대평가이며 실제 조직의 BIA/자산평가 결과를 의미하지 않습니다.
+diff -ruN '--exclude=__pycache__' a/docs/isms_p/02_data_flow.md b/docs/isms_p/02_data_flow.md
+--- a/docs/isms_p/02_data_flow.md	1970-01-01 00:00:00.000000000 +0000
++++ b/docs/isms_p/02_data_flow.md	2026-09-14 05:21:15.565580322 +0000
+@@ -0,0 +1,50 @@
++# 현황 및 데이터 흐름 분석
++
++## 1. 주요 흐름
++
++```text
++[TB-01 Untrusted Darkweb Source]
++              │
++              ▼
++       Selenium / Tor
++              │
++              ▼
++       Parser / Normalizer
++              │
++       allowlist/redaction
++              ▼
++[TB-03]     MongoDB
++          /    |      \
++         /     |       \
++ current    history    risk
++                        │
++                        ▼
++                     alert_log
++                        │
++                        ▼
++              [TB-04 Telegram API]
++
++MongoDB ──→ [TB-05 Django Dashboard] ──→ Analyst / Security Admin
++    │
++    └──→ Monstache ──→ [TB-06 Elasticsearch / Kibana]
++
++Django / Retention ──→ [TB-02 Local audit.jsonl] ──→ Security Admin Audit Review
++```
++
++## 2. Trust Boundary
++
++| ID | 경계 | 주요 위험 | 현재 통제 |
++|---|---|---|---|
++| TB-01 | 외부 다크웹 → Crawler | 악성/과도한 입력, source 변동 | parser allowlist, bounded metadata, source lifecycle |
++| TB-02 | Application Runtime | secret 노출, 로그 과수집 | `.env`, secret scan, audit allowlist |
++| TB-03 | MongoDB | 데이터 변조·장기보유 | identity/dedupe/history, retention safety |
++| TB-04 | Telegram API | 외부전송·중복전송 | redaction, risk threshold, deterministic alert |
++| TB-05 | Analyst Web Boundary | 비인가 조회, 권한 과다 | auth, Analyst/Security Admin 분리, CSRF/no-cache |
++| TB-06 | ELK Boundary | 내부필드 확산·분석표면 확대 | strict projection/mapping, minimized fields |
++
++## 3. 민감 데이터 이동 원칙
++
++- raw credential·secret·private delivery field는 분석 표면으로 전달하지 않습니다.
++- MongoDB 전체 document를 Elasticsearch로 그대로 복제하지 않습니다.
++- audit에는 raw username/document ID 대신 SHA-256 pseudonym을 기록합니다.
++- Audit Review는 raw audit record를 다시 노출하지 않고 aggregate count만 제공합니다.
+diff -ruN '--exclude=__pycache__' a/docs/isms_p/03_control_gap_matrix.md b/docs/isms_p/03_control_gap_matrix.md
+--- a/docs/isms_p/03_control_gap_matrix.md	1970-01-01 00:00:00.000000000 +0000
++++ b/docs/isms_p/03_control_gap_matrix.md	2026-09-14 05:21:15.566341122 +0000
+@@ -0,0 +1,34 @@
++# ISMS-P 통제항목 모의 GAP Matrix
++
++> 실제 인증심사 결과가 아니라 프로젝트 범위의 자체진단입니다. 101개 전체 항목 중 시스템과 직접 연관된 21개를 선별했습니다.
++
++| 항목 | 항목명 | 판정 | 현재 상태/증적 | GAP | 개선 방향 |
++|---|---|---|---|---|---|
++| 1.1.4 | 범위 설정 | PARTIAL | architecture/project story 존재 | 인증범위 형식의 문서 부족 | `00_scope.md` 작성 |
++| 1.2.1 | 정보자산 식별 | GAP→PARTIAL | 기능별 파일은 있으나 자산대장 없음 | 중요도·데이터유형 연결 부족 | `01_asset_inventory.md` 작성 |
++| 1.2.2 | 현황 및 흐름분석 | PARTIAL | architecture 존재 | trust boundary와 데이터 이동 분석 부족 | `02_data_flow.md` 작성 |
++| 1.2.3 | 위험 평가 | GAP→PARTIAL | `alert/risk.py`는 사건 위험도 분류 | 조직 정보보호 Risk Register 부재 | 별도 5x5 위험평가 작성 |
++| 1.2.4 | 보호대책 선정 | GAP→PARTIAL | 개별 통제는 존재 | 위험-대책-담당-잔여위험 연결 부재 | treatment plan 작성 |
++| 1.3.1 | 보호대책 구현 | PARTIAL | redaction/auth/retention/audit/ELK | 위험평가와 구현 근거 연결 약함 | evidence index 연결 |
++| 1.3.3 | 운영현황 관리 | PARTIAL | runtime/governance checker | 정기 수행 주기·책임자 기록 부재 | 운영 checklist/검토 기록 유지 |
++| 1.4.2 | 관리체계 점검 | GAP | 기능 테스트는 수행 | 관리체계 관점 정기 자체점검 부재 | 본 GAP matrix를 정기 검토 baseline으로 사용 |
++| 1.4.3 | 관리체계 개선 | PARTIAL | Day별 개선·회귀 기록 | corrective action tracking 형식 부족 | treatment 상태/잔여위험 기록 |
++| 2.5.1 | 사용자 계정 관리 | PARTIAL | Django auth | 일반 사용자 간 역할구분 부족 | Analyst/Security Admin 최소 RBAC |
++| 2.5.3 | 사용자 인증 | PARTIAL | 로그인/CSRF/secure-cookie opt-in | MFA/login throttling 미구현 | 운영 도입 시 강화 필요 |
++| 2.5.5 | 특수 계정 및 권한관리 | GAP→PARTIAL | staff account 사용 가능 | 관리자 용도 명시·화면 분리 부족 | Security Admin-only audit review |
++| 2.5.6 | 접근권한 검토 | GAP | Django 계정 존재 | 권한 부여·변경 정기검토 절차 없음 | 향후 account/permission review 절차 |
++| 2.9.3 | 백업 및 복구관리 | GAP | destructive protection 존재 | 실제 backup/restore 시험 증적 없음 | 정기 backup/restore test 필요 |
++| 2.9.4 | 로그 및 접속기록 관리 | PARTIAL | JSON audit, hash, rotation | 중앙수집·변조방지 미구현 | 운영환경 central/WORM sink 검토 |
++| 2.9.5 | 로그 및 접속기록 점검 | GAP→PARTIAL | audit 생성만 존재 | 정기 review 기준/도구 부재 | 30일 aggregate Audit Review 추가 |
++| 2.9.6 | 시간 동기화 | PARTIAL | UTC aware timestamp 사용 | NTP 운영증적 없음 | 운영 배포 시 time sync 점검 |
++| 2.10.1 | 보안시스템 운영 | PARTIAL | ELK 운영절차·검증 도구 | 정책변경 승인/담당체계 부족 | 운영 변경관리 필요 |
++| 2.11.1 | 사고 예방 및 대응체계 구축 | PARTIAL | `incident_response.md` | 실제 조직 연락망/훈련 없음 | tabletop 및 연락체계 필요 |
++| 2.11.3 | 이상행위 분석 및 모니터링 | PARTIAL | risk alert/ELK | 인프라 전체 이상행위 모니터링 아님 | 범위 명시, 운영 SIEM 연계 고려 |
++| 3.4.1 | 개인정보 파기 | CONDITIONAL/PARTIAL | retention dry-run/apply safety | 법적 보유기간·legal hold 판단 아님 | 적용성/법정기간 별도 검토 |
++
++## 이번 구현에서 닫는 핵심 GAP
++
++1. **2.5.1 / 2.5.5**: 일반 Analyst와 `is_staff=True` Security Admin의 governance 기능 접근을 분리합니다.
++2. **2.9.5**: `audit.jsonl` 및 rotation 파일을 최근 30일 기준으로 읽어 `login_failure`, 접근거부, error, retention error, malformed record를 aggregate review합니다.
++
++나머지 GAP은 구현되지 않았다고 명시적으로 남겨 과대평가를 피합니다.
+diff -ruN '--exclude=__pycache__' a/docs/isms_p/04_risk_register.md b/docs/isms_p/04_risk_register.md
+--- a/docs/isms_p/04_risk_register.md	1970-01-01 00:00:00.000000000 +0000
++++ b/docs/isms_p/04_risk_register.md	2026-09-14 05:21:15.567065417 +0000
+@@ -0,0 +1,29 @@
++# 정보보호 Risk Register
++
++## 평가방법
++
++- Likelihood: 1(희박) ~ 5(매우 높음)
++- Impact: 1(낮음) ~ 5(매우 큼)
++- Risk Score = Likelihood × Impact
++- 1~4 LOW / 5~9 MEDIUM / 10~15 HIGH / 16~25 CRITICAL
++
++이는 프로젝트용 단순 방법론이며 실제 조직의 위험수용 기준을 대신하지 않습니다.
++
++| ID | 자산 | 위험 시나리오 | L | I | 기존 위험 | 현재 통제 | 처리 |
++|---|---|---|---:|---:|---:|---|---|
++| R-01 | Django Dashboard | 모든 인증사용자가 동일 governance 권한 사용 | 3 | 4 | 12 HIGH | login required | **완화: Analyst/Admin 분리** |
++| R-02 | Django Auth | brute-force/MFA 부재로 계정 탈취 | 2 | 4 | 8 MEDIUM | Django auth, CSRF | OPEN: 운영 시 MFA/throttling |
++| R-03 | Audit Log | 로컬 파일 변조·삭제로 추적성 저하 | 3 | 4 | 12 HIGH | hash identifier, rotation | OPEN: central/WORM sink |
++| R-04 | Audit Log | 기록은 있으나 정기 검토하지 않아 이상징후 누락 | 3 | 4 | 12 HIGH | audit generation | **완화: Audit Review** |
++| R-05 | MongoDB | retention 오설정·잘못된 대량삭제 | 2 | 5 | 10 HIGH | dry-run, DB double confirmation | 유지/검토 |
++| R-06 | MongoDB/ES | backup/restore 미검증으로 장애 시 복구 실패 | 3 | 5 | 15 HIGH | destructive protection | OPEN: restore exercise |
++| R-07 | Crawler | source 구조 변경을 공격 종료/정상으로 오판 | 4 | 3 | 12 HIGH | source lifecycle, fixture tests | 유지/수동 검토 |
++| R-08 | `.env` | credential이 repository/log에 노출 | 2 | 5 | 10 HIGH | gitignore, secret scan, redaction | 유지/키회전 운영 필요 |
++| R-09 | ELK | Elasticsearch/Kibana 노출 또는 내부필드 확산 | 3 | 4 | 12 HIGH | loopback lab, strict projection | OPEN: 운영 network control |
++| R-10 | Telegram | 중복/불필요 alert 또는 과도한 외부전송 | 2 | 3 | 6 MEDIUM | threshold, redaction, dedupe/retry | 유지 |
++| R-11 | Incident Response | 실제 사고 시 연락·보고·법률 판단 지연 | 3 | 4 | 12 HIGH | IR playbook | OPEN: 조직 절차/훈련 |
++| R-12 | `description` metadata | 외부 게시글에 우발적 개인정보가 포함 | 3 | 4 | 12 HIGH | allowlist, redaction, bounded metadata | 잔여위험 인정 |
++
++## 주의
++
++`alert/risk.py`가 산정하는 CRITICAL/HIGH/MEDIUM 등은 **수집된 위협 사건의 위험도**입니다. 이 문서의 R-01~R-12는 **시스템 운영의 정보보호 위험**이며 서로 다른 개념입니다.
+diff -ruN '--exclude=__pycache__' a/docs/isms_p/05_risk_treatment_plan.md b/docs/isms_p/05_risk_treatment_plan.md
+--- a/docs/isms_p/05_risk_treatment_plan.md	1970-01-01 00:00:00.000000000 +0000
++++ b/docs/isms_p/05_risk_treatment_plan.md	2026-09-14 05:21:15.567866708 +0000
+@@ -0,0 +1,22 @@
++# 위험 처리 계획
++
++| Risk | 처리전략 | 구현/계획 | 담당 역할 가정 | 상태 | 잔여위험 |
++|---|---|---|---|---|---|
++| R-01 | Mitigate | Analyst는 조회, Security Admin만 Audit Review | Security Admin | IMPLEMENTED | LOW~MEDIUM: Django staff 자체 관리 필요 |
++| R-02 | Mitigate | 운영 배포 시 MFA/login throttling | Security Admin | OPEN | MEDIUM |
++| R-03 | Mitigate | 중앙/WORM 로그 sink 또는 무결성 보호 | Security Admin | OPEN | HIGH |
++| R-04 | Mitigate | 30일 read-only aggregate Audit Review | Security Admin | IMPLEMENTED | MEDIUM: 자동 알림/승인 workflow 없음 |
++| R-05 | Mitigate | dry-run 기본, apply+DB명 이중확인 유지 | Operator | IMPLEMENTED | MEDIUM: 잘못된 retention 정책 가능 |
++| R-06 | Mitigate | backup + restore test 절차 | Operator | OPEN | HIGH |
++| R-07 | Mitigate/Accept | ACTIVE lifecycle, fixture/parser regression, 수동 검토 | Analyst | IMPLEMENTED | MEDIUM |
++| R-08 | Mitigate | `.env`, secret scan, redaction, 실제 키회전 | Security Admin | PARTIAL | MEDIUM |
++| R-09 | Mitigate | projection 최소화, 운영 network ACL | Security Admin | PARTIAL | MEDIUM |
++| R-10 | Mitigate | material change threshold, dedupe/retry | Analyst | IMPLEMENTED | LOW~MEDIUM |
++| R-11 | Mitigate | 연락망·tabletop·법무 escalation | Security Admin | OPEN | HIGH |
++| R-12 | Mitigate/Accept | metadata 최소화/redaction, 필요 시 추가 DLP | Analyst | PARTIAL | MEDIUM |
++
++## 우선순위
++
++1. R-01/R-04: 프로젝트 코드에서 즉시 개선 가능한 통제
++2. R-03/R-06/R-11: 운영환경·조직 절차가 필요한 High risk
++3. R-02/R-08/R-09/R-12: 실제 배포 전 hardening 필요
+diff -ruN '--exclude=__pycache__' a/docs/isms_p/06_evidence_index.md b/docs/isms_p/06_evidence_index.md
+--- a/docs/isms_p/06_evidence_index.md	1970-01-01 00:00:00.000000000 +0000
++++ b/docs/isms_p/06_evidence_index.md	2026-09-14 05:21:15.568617908 +0000
+@@ -0,0 +1,22 @@
++# ISMS-P 모의진단 Evidence Index
++
++| 통제 | Evidence | 무엇을 증명하는가 | 증명하지 못하는 것 |
++|---|---|---|---|
++| 1.1.4 | `docs/isms_p/00_scope.md` | 프로젝트 진단 범위·제외범위 | 실제 인증범위 승인 |
++| 1.2.1 | `docs/isms_p/01_asset_inventory.md` | 자산 식별·상대 중요도 | 실제 조직 CMDB/BIA |
++| 1.2.2 | `docs/isms_p/02_data_flow.md`, `docs/architecture.md` | 데이터 이동·trust boundary | 전체 조직 네트워크 DFD |
++| 1.2.3 | `docs/isms_p/04_risk_register.md` | 별도 정보보호 위험평가 | 실제 경영진 위험수용 |
++| 1.2.4 | `docs/isms_p/05_risk_treatment_plan.md` | 위험-처리-잔여위험 연결 | 예산/공식 일정 승인 |
++| 2.5.1/2.5.5 | `governance/django_controls.py`, `views.py`, Django governance tests | Analyst/Admin 최소 권한분리 | MFA/SSO/정기 account recertification |
++| 2.9.4 | `governance/audit.py`, `logs/audit.jsonl`(runtime) | allowlisted audit, pseudonym, rotation | 중앙수집/변조방지 |
++| 2.9.5 | `governance/audit_review.py`, `scripts/review_audit.py`, `governance_review.html`, tests | 주기적 aggregate review 기준·도구 | 실제 조직의 월간 승인 기록 |
++| 2.10.1 | `elk/operations.md`, `scripts/check_elk_pipeline.py` | ELK 운영·검증 절차 | 조직 변경관리 승인체계 |
++| 2.11.1 | `governance/incident_response.md` | 프로젝트 대응 절차 | 실제 연락망/법적 신고 판단 |
++| 2.11.3 | `alert/service.py`, `alert/risk.py`, `elk/` | 위협 metadata 모니터링·alert | 전체 인프라 SIEM coverage |
++| 3.4.1 | `governance/retention.py`, `scripts/apply_retention.py` | safe retention/dry-run | 법적 보유기간 적정성 |
++
++## 테스트 증적
++
++- `tests/test_governance.py`: audit/retention/redaction/source lifecycle 및 Audit Review 단위 테스트
++- `DjangoProject/mongoDbConnect/tests_governance.py`: 로그인·CSRF·RBAC·Security Admin Audit Review 테스트
++- 기존 Day15 E2E 로그/스크린샷은 실제 Mongo/Telegram/ELK/Django 통합 증적으로 별도 보관
+diff -ruN '--exclude=__pycache__' a/docs/isms_p/07_final_assessment.md b/docs/isms_p/07_final_assessment.md
+--- a/docs/isms_p/07_final_assessment.md	1970-01-01 00:00:00.000000000 +0000
++++ b/docs/isms_p/07_final_assessment.md	2026-09-14 05:21:15.569458483 +0000
+@@ -0,0 +1,55 @@
++# 모의진단 최종 평가
++
++## 1. 최초 진단 요약
++
++기존 시스템은 인증, audit logging, retention safety, secret redaction, source lifecycle, ELK field minimization 등 기술 통제를 갖추고 있었습니다. 그러나 이를 ISMS-P 관점의 **범위-자산-흐름-위험-통제-증적**으로 연결한 산출물이 없었고, 특히 다음 두 GAP이 명확했습니다.
++
++- 모든 인증 사용자의 governance 기능 권한이 구분되지 않음
++- audit log를 생성하지만 정기 검토하는 기준·도구가 없음
++
++## 2. 이번 개선
++
++### Access Control
++
++- Analyst: dashboard/event detail 조회
++- Security Admin (`is_staff=True`): Analyst 권한 + `/governance/audit-review/`
++- Anonymous: 로그인으로 redirect
++- Analyst의 governance review 접근: 403
++
++### Audit Review
++
++- 기본 최근 30일, UTC 기준
++- current/rotated `audit.jsonl*` read-only 검토
++- `login_failure >= 5`, `denied_access >= 5`, `error >= 1`, `retention_error >= 1`, `malformed >= 1` 시 `ATTENTION`
++- raw `user_hash`/`document_hash` 및 요청 metadata를 결과에 출력하지 않음
++
++## 3. 재평가
++
++| 영역 | 이전 | 이후 | 잔여 한계 |
++|---|---|---|---|
++| 사용자/특수권한 관리 | PARTIAL/GAP | PARTIAL | Django staff 기반 최소구현, MFA/정기 권한검토 없음 |
++| 로그 관리 | PARTIAL | PARTIAL | rotation은 있으나 중앙/WORM 보호 없음 |
++| 로그 점검 | GAP | PARTIAL | read-only review 구현, 실제 조직 승인·자동 alert workflow 없음 |
++| 위험관리 | GAP | PARTIAL | project risk register/treatment 작성, 실제 경영진 수용 아님 |
++| 관리체계 점검 | GAP | PARTIAL | 모의 GAP matrix 존재, 정기 audit cycle은 향후 과제 |
++
++## 4. 남은 주요 GAP
++
++- MFA/login throttling 및 계정/권한 정기 검토
++- audit 중앙수집·변조방지
++- Mongo/ELK backup/restore 정기 시험
++- 운영환경 NTP/시간동기화 증적
++- 실제 incident contact/escalation/tabletop
++- 개인정보 법적 적용성·보유기간·파기 기준 별도 법률검토
++
++## 5. 포트폴리오 표현
++
++권장 표현:
++
++> 자체 개발한 위협정보 모니터링 시스템을 대상으로 ISMS-P 통제항목 기반 모의진단을 수행하여 정보자산·데이터 흐름을 식별하고, 위험평가와 GAP 분석을 통해 역할별 접근통제 및 감사로그 점검 체계를 개선하고 증적을 연결했습니다.
++
++피해야 할 표현:
++
++- "ISMS-P 인증을 획득했다"
++- "실제 인증심사를 수행했다"
++- "개인정보보호법 준수 시스템이다"
+diff -ruN '--exclude=__pycache__' a/docs/project_story.md b/docs/project_story.md
+--- a/docs/project_story.md	2026-09-14 04:40:39.000000000 +0000
++++ b/docs/project_story.md	2026-09-14 05:23:34.559600002 +0000
+@@ -80,7 +80,7 @@
+ 
+ ## 6. 검증 결과
+ 
+-최종 Day13 기준 확인한 대표 결과입니다.
++ISMS-P 확장 전 최종 baseline에서 확인한 대표 결과입니다. 이번 확장 후 최종 PASS 수는 로컬 `.venv`에서 재검증한 뒤 갱신합니다.
+ 
+ - root unittest: 266 PASS
+ - Django `mongoDbConnect`: 77 PASS
+@@ -103,6 +103,7 @@
+ - `NEW/UPDATED` 위험도 알림에 deterministic alert ID, retry/lease, 전송 이력을 적용하고 Telegram 실환경 E2E로 중복 방지와 재시작 복구 검증
+ - MongoDB 데이터를 Monstache로 Elasticsearch/Kibana에 실시간 투영하고 direct-read·change-stream·resume을 실제 Docker 환경에서 검증
+ - Django 인증·감사로그, metadata 최소화/redaction, retention DRY RUN, source lifecycle을 추가해 보안·개인정보/GRC 관점의 운영 통제 보완
++- ISMS-P 통제항목 기반 모의진단으로 자산·데이터 흐름·Risk Register·GAP·증적을 연결하고, Analyst/Security Admin 권한 분리와 read-only Audit Review를 추가
+ 
+ ## 8. 포트폴리오용 설명
+ 
+@@ -135,7 +136,11 @@
+ **Q. UNAVAILABLE source의 crawler를 왜 삭제하지 않았나요?**
+ 현재 live availability와 parser 구현의 재현성은 별개라서 fixture와 parser는 보존하고 scheduler 자동 실행만 lifecycle 상태로 제어했습니다.
+ 
+-## 11. 설명할 때 지킬 경계
++## 11. ISMS-P 모의진단 확장
++
++기존 governance 기능을 인증 충족으로 과장하지 않고, `docs/isms_p/`에 범위·자산·데이터 흐름·GAP Matrix·Risk Register·Risk Treatment·Evidence Index를 분리했습니다. 실제 코드 GAP 중에서는 (1) Analyst와 Security Admin의 governance 권한 분리, (2) 최근 30일 감사로그 aggregate review를 구현했습니다. 이 확장은 실제 인증심사 수행이 아니라 자체 시스템을 대상으로 한 **ISMS-P 통제항목 기반 모의 보안진단 및 개선**입니다.
++
++## 12. 설명할 때 지킬 경계
+ 
+ 이 프로젝트를 설명할 때 다음 표현은 피합니다.
+ 
+diff -ruN '--exclude=__pycache__' a/governance/audit.py b/governance/audit.py
+--- a/governance/audit.py	2026-09-14 04:40:39.000000000 +0000
++++ b/governance/audit.py	2026-09-14 05:19:27.517433191 +0000
+@@ -12,10 +12,10 @@
+ import sys
+ import threading
+ 
+-EVENTS = frozenset({"dashboard_access", "event_detail_access", "login_success",
+-                    "login_failure", "logout", "retention_execution"})
++EVENTS = frozenset({"dashboard_access", "event_detail_access", "governance_review_access",
++                    "login_success", "login_failure", "logout", "retention_execution"})
+ RESULTS = frozenset({"success", "denied", "not_found", "error", "dry_run", "started", "deleted"})
+-CATEGORIES = frozenset({"dashboard", "event_detail", "authentication", "retention"})
++CATEGORIES = frozenset({"dashboard", "event_detail", "governance_review", "authentication", "retention"})
+ _LOGGER = None
+ _LOCK = threading.Lock()
+ 
+diff -ruN '--exclude=__pycache__' a/governance/audit_review.py b/governance/audit_review.py
+--- a/governance/audit_review.py	1970-01-01 00:00:00.000000000 +0000
++++ b/governance/audit_review.py	2026-09-14 05:23:34.559269367 +0000
+@@ -0,0 +1,149 @@
++"""Read-only review of allowlisted governance audit JSONL files.
++
++The reviewer intentionally returns aggregate counts only. It never returns raw
++``user_hash``/``document_hash`` values and does not open MongoDB or the network.
++"""
++from __future__ import annotations
++
++from datetime import datetime, timedelta, timezone
++import json
++from pathlib import Path
++from typing import Iterable
++
++from .audit import CATEGORIES, EVENTS, RESULTS
++
++DEFAULT_DAYS = 30
++DEFAULT_THRESHOLDS = {
++    "login_failure": 5,
++    "denied_access": 5,
++    "error": 1,
++    "retention_error": 1,
++    "malformed": 1,
++}
++ACCESS_CATEGORIES = frozenset({"dashboard", "event_detail", "governance_review"})
++
++
++class AuditReviewError(ValueError):
++    """Raised for an invalid review request without exposing source content."""
++
++
++def _utc_now(now: datetime | None = None) -> datetime:
++    stamp = datetime.now(timezone.utc) if now is None else now
++    if stamp.tzinfo is None or stamp.utcoffset() is None:
++        raise AuditReviewError("review timestamp must be timezone-aware")
++    return stamp.astimezone(timezone.utc)
++
++
++def _parse_timestamp(value) -> datetime | None:
++    if not isinstance(value, str) or len(value) > 80:
++        return None
++    try:
++        stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
++    except (ValueError, TypeError):
++        return None
++    if stamp.tzinfo is None or stamp.utcoffset() is None:
++        return None
++    return stamp.astimezone(timezone.utc)
++
++
++def audit_paths(directory: str | Path | None = None) -> tuple[Path, ...]:
++    """Return current + rotated audit files in deterministic oldest-to-newest order."""
++    root = Path(directory) if directory is not None else Path(__file__).resolve().parents[1] / "logs"
++    current = root / "audit.jsonl"
++    rotated = []
++    for path in root.glob("audit.jsonl.*") if root.exists() else ():
++        suffix = path.name.removeprefix("audit.jsonl.")
++        if suffix.isdigit():
++            rotated.append((int(suffix), path))
++    # Higher rotation suffix is older. Review old -> current for deterministic output.
++    ordered = [path for _, path in sorted(rotated, reverse=True)]
++    if current.exists():
++        ordered.append(current)
++    return tuple(ordered)
++
++
++def _iter_lines(paths: Iterable[Path]):
++    for path in paths:
++        try:
++            with path.open("r", encoding="utf-8") as handle:
++                for line in handle:
++                    yield line
++        except (OSError, UnicodeError):
++            # A file that cannot be safely read is an integrity/review problem.
++            yield None
++
++
++def review(directory: str | Path | None = None, *, days: int = DEFAULT_DAYS,
++           now: datetime | None = None, thresholds: dict[str, int] | None = None) -> dict:
++    """Review audit logs and return aggregate evidence only.
++
++    No raw audit record, pseudonymous identifier, request data, or exception text is
++    returned. Invalid/unreadable lines are counted as ``malformed``.
++    """
++    if type(days) is not int or not 1 <= days <= 3650:
++        raise AuditReviewError("days must be an integer between 1 and 3650")
++    stamp = _utc_now(now)
++    cutoff = stamp - timedelta(days=days)
++    limits = dict(DEFAULT_THRESHOLDS if thresholds is None else thresholds)
++    if set(limits) != set(DEFAULT_THRESHOLDS) or any(type(v) is not int or v < 1 for v in limits.values()):
++        raise AuditReviewError("invalid review thresholds")
++
++    counts = {
++        "records_in_window": 0,
++        "login_failure": 0,
++        "denied_access": 0,
++        "error": 0,
++        "retention_error": 0,
++        "malformed": 0,
++    }
++    paths = audit_paths(directory)
++    for raw in _iter_lines(paths):
++        if raw is None:
++            counts["malformed"] += 1
++            continue
++        if not raw.strip():
++            continue
++        try:
++            record = json.loads(raw)
++        except (json.JSONDecodeError, TypeError):
++            counts["malformed"] += 1
++            continue
++        if not isinstance(record, dict):
++            counts["malformed"] += 1
++            continue
++        observed = _parse_timestamp(record.get("timestamp"))
++        if observed is None or observed > stamp + timedelta(minutes=5):
++            counts["malformed"] += 1
++            continue
++        if observed < cutoff:
++            continue
++
++        event = record.get("event")
++        category = record.get("category")
++        result = record.get("result")
++        if event not in EVENTS or category not in CATEGORIES or result not in RESULTS:
++            counts["malformed"] += 1
++            continue
++
++        counts["records_in_window"] += 1
++        if event == "login_failure":
++            counts["login_failure"] += 1
++        if result == "denied" and category in ACCESS_CATEGORIES:
++            counts["denied_access"] += 1
++        if result == "error":
++            counts["error"] += 1
++            if category == "retention":
++                counts["retention_error"] += 1
++
++    breaches = {name: counts[name] >= threshold for name, threshold in limits.items()}
++    attention = any(breaches.values())
++    return {
++        "reviewed_at": stamp.isoformat(),
++        "window_days": days,
++        "status": "ATTENTION" if attention else "OK",
++        "counts": counts,
++        "thresholds": limits,
++        "breaches": breaches,
++        "files_reviewed": len(paths),
++        "privacy": "aggregate_only_no_raw_identifiers",
++    }
+diff -ruN '--exclude=__pycache__' a/governance/control_matrix.md b/governance/control_matrix.md
+--- a/governance/control_matrix.md	2026-09-14 04:40:39.000000000 +0000
++++ b/governance/control_matrix.md	2026-09-14 05:21:35.388198564 +0000
+@@ -8,10 +8,11 @@
+ |---|---|---|---|---|
+ | Secret management | 환경변수/자격증명 노출 | env 분리, 알려진 패턴 검사, 공유 credential redaction | [.gitignore](../.gitignore), [check_secrets.py](../scripts/check_secrets.py), [policy.py](policy.py) | 모든 secret/PII를 탐지하지 않음; 실제 키 회전은 담당자 업무 |
+ | Least data collection | 원문·과도한 metadata 저장 | 기존 allowlist 재사용, storage 길이 제한, 알려진 secret 가림 | [models.py](../crawling/models.py), [storage.py](../crawling/storage.py), [test_governance.py](../tests/test_governance.py) | 기존 전체 DB 정제 없음; 긴 identity 저장은 거부됨 |
+-| Access control | 비인가 분석 화면 조회 | auth 기본 True, 운영 모드 강제, POST 로그아웃·CSRF, 구형 진입점 차단 | [settings.py](../DjangoProject/DjangoProject/settings.py), [django_controls.py](django_controls.py), [tests_governance.py](../DjangoProject/mongoDbConnect/tests_governance.py), [구형 설정](../webapp/DjangoProject/settings.py) | 상세 RBAC/MFA/외부 SSO 미구현; 계정 발급 통제 필요 |
++| Access control | 비인가 분석 화면 조회·과도한 관리자 권한 | auth 기본 True, 운영 모드 강제, POST 로그아웃·CSRF, Analyst/Security Admin 최소 권한분리, 구형 진입점 차단 | [settings.py](../DjangoProject/DjangoProject/settings.py), [django_controls.py](django_controls.py), [tests_governance.py](../DjangoProject/mongoDbConnect/tests_governance.py), [구형 설정](../webapp/DjangoProject/settings.py) | Django `is_staff` 기반 최소 RBAC이며 MFA/외부 SSO/정기 권한검토 미구현 |
+ | Retention | 목적 없이 장기 보유하거나 잘못 삭제 | 365/365/180일 기본값, UTC scalar date, invalid/future 제외, read-only checker | [policy.py](policy.py), [retention.py](retention.py), [check_governance.py](../scripts/check_governance.py) | 운영 기본값이며 법정 기간이 아님; legal hold·백업 만료 별도 |
+ | Explicit deletion approval | DB 오지정·대량 삭제 사고 | dry-run 기본, --apply 및 두 DB 이름·연결 DB 확인, 세 collection date query만 허용 | [apply_retention.py](../scripts/apply_retention.py), [test_governance.py](../tests/test_governance.py) | 권한 있는 운영자의 잘못된 기간 설정은 별도 검토 필요; 다중 collection transaction 없음 |
+ | Audit logging | 추적성 부족·로그 자체의 노출 | 고정 JSON 필드, PK/문서 ID 해시, 1 MiB 회전/백업 5개, 안전한 console fallback | [audit.py](audit.py), [django_controls.py](django_controls.py), [tests_governance.py](../DjangoProject/mongoDbConnect/tests_governance.py) | 변조 방지·중앙 수집 미구현; 다중 프로세스 운영 설계 별도 |
++| Audit review | 로그는 남지만 이상징후 검토가 누락 | 최근 30일 current/rotated JSONL을 read-only 집계하고 로그인실패·접근거부·오류·retention 오류·malformed 임계치를 판정 | [audit_review.py](audit_review.py), [review_audit.py](../scripts/review_audit.py), [Django tests](../DjangoProject/mongoDbConnect/tests_governance.py) | 실제 조직의 승인·보고 workflow 및 자동 SIEM alert는 미구현 |
+ | Source lifecycle | 불안정 source 반복 실행·수집 범위 확대 | Bitlock ACTIVE, 나머지 UNAVAILABLE, 상태별 자동 실행 필터 | [sources.py](sources.py), [scheduler.py](../scheduler/scheduler.py), [test_scheduler.py](../tests/test_scheduler.py) | 상태 수동 검토/프로세스 재시작 필요; 실제 threat actor 상태 단정 불가 |
+ | Alert dedupe | 반복 Telegram 발송·전달 일관성 문제 | 기존 deterministic 예약·claim/retry 흐름 유지 | [service.py](../alert/service.py), [test_alerts.py](../tests/test_alerts.py) | 외부 Telegram 전달의 모든 실패를 제거하지 않음; 기존 한계 유지 |
+ | Change history | metadata 변경 근거 소실 | 기존 event_key, history 선기록, deterministic history upsert 유지 | [storage.py](../crawling/storage.py), [test_storage.py](../tests/test_storage.py) | Mongo cross-collection transaction 없음; 보존 기간 뒤에는 history가 없을 수 있음 |
+diff -ruN '--exclude=__pycache__' a/governance/django_controls.py b/governance/django_controls.py
+--- a/governance/django_controls.py	2026-09-14 04:40:39.000000000 +0000
++++ b/governance/django_controls.py	2026-09-14 05:19:27.517616225 +0000
+@@ -10,8 +10,16 @@
+ from . import audit
+ 
+ 
+-def protected_view(category):
+-    event = "dashboard_access" if category == "dashboard" else "event_detail_access"
++def protected_view(category, *, staff_only=False):
++    events = {
++        "dashboard": "dashboard_access",
++        "event_detail": "event_detail_access",
++        "governance_review": "governance_review_access",
++    }
++    try:
++        event = events[category]
++    except KeyError as error:
++        raise ValueError("invalid protected view category") from error
+ 
+     def decorate(view):
+         @wraps(view)
+@@ -28,6 +36,8 @@
+                       and not authenticated):
+                     # Do not copy search text or document IDs into the login URL.
+                     response = redirect_to_login("/", settings.LOGIN_URL)
++                elif staff_only and not (authenticated and user.is_staff):
++                    response = HttpResponseForbidden("Security Admin role is required.")
+                 else:
+                     response = view(request, *args, **kwargs)
+             except Exception:
+diff -ruN '--exclude=__pycache__' a/scripts/review_audit.py b/scripts/review_audit.py
+--- a/scripts/review_audit.py	1970-01-01 00:00:00.000000000 +0000
++++ b/scripts/review_audit.py	2026-09-14 05:19:27.062152257 +0000
+@@ -0,0 +1,42 @@
++"""Read-only aggregate review of governance audit logs."""
++import argparse
++import json
++from pathlib import Path
++import sys
++
++ROOT = Path(__file__).resolve().parents[1]
++if str(ROOT) not in sys.path:
++    sys.path.insert(0, str(ROOT))
++
++from governance.audit_review import AuditReviewError, DEFAULT_DAYS, review
++
++
++def parser():
++    value = argparse.ArgumentParser(description=__doc__)
++    value.add_argument("--days", type=int, default=DEFAULT_DAYS, help="UTC review window (default: 30)")
++    value.add_argument("--log-dir", default=None, help="Audit directory; defaults to repository logs/")
++    value.add_argument("--json", action="store_true", help="Emit aggregate JSON")
++    return value
++
++
++def main(argv=None):
++    args = parser().parse_args(argv)
++    try:
++        result = review(args.log_dir, days=args.days)
++    except AuditReviewError as error:
++        print(f"ERROR: {error}")
++        return 2
++    if args.json:
++        print(json.dumps(result, ensure_ascii=True, indent=2, sort_keys=True))
++    else:
++        print(f"Audit review: {result['status']}")
++        print(f"Window: {result['window_days']} day(s), files={result['files_reviewed']}, records={result['counts']['records_in_window']}")
++        for name in ("login_failure", "denied_access", "error", "retention_error", "malformed"):
++            marker = "ATTENTION" if result["breaches"][name] else "OK"
++            print(f"- {name}: {result['counts'][name]} / threshold {result['thresholds'][name]} [{marker}]")
++        print("Privacy: aggregate counts only; raw user/document identifiers are not printed.")
++    return 1 if result["status"] == "ATTENTION" else 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff -ruN '--exclude=__pycache__' a/tests/test_governance.py b/tests/test_governance.py
+--- a/tests/test_governance.py	2026-09-14 04:40:39.000000000 +0000
++++ b/tests/test_governance.py	2026-09-14 05:20:04.930257328 +0000
+@@ -14,7 +14,7 @@
+ from unittest.mock import Mock, patch
+ 
+ from crawling import models, storage
+-from governance import audit, elk_check, policy, retention, runtime, sources
++from governance import audit, audit_review, elk_check, policy, retention, runtime, sources
+ from elk.config import Config as ElkConfig, ElkError
+ from scripts import apply_retention, check_governance, check_runtime_config
+ from tests.test_storage import MemoryCollection, observation
+@@ -600,13 +600,107 @@
+      patch('socket.getaddrinfo', side_effect=AssertionError('DNS')), \
+      patch('dotenv.load_dotenv', side_effect=AssertionError('env')), \
+      patch('logging.FileHandler.__init__', side_effect=AssertionError('log file')):
+-    from governance import policy, sources, audit, retention, runtime, elk_check
++    from governance import policy, sources, audit, audit_review, retention, runtime, elk_check
+     assert sources.active_modules() == ('crawling.bitlock_crawler',)
+ """
+         result = subprocess.run([sys.executable, "-c", code], cwd=ROOT, capture_output=True, text=True, timeout=30)
+         self.assertEqual(result.returncode, 0, result.stderr)
+ 
+ 
++class AuditReviewTests(OfflineCase):
++    def write_logs(self, directory, lines, *, rotated=None):
++        root = Path(directory)
++        root.mkdir(parents=True, exist_ok=True)
++        (root / "audit.jsonl").write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
++        if rotated is not None:
++            (root / "audit.jsonl.1").write_text("\n".join(rotated) + "\n", encoding="utf-8")
++
++    def row(self, event="dashboard_access", category="dashboard", result="success", *, at=NOW, **extra):
++        return json.dumps({"timestamp": at.isoformat(), "event": event, "category": category,
++                           "result": result, "authenticated": True, **extra})
++
++    def test_review_ok_is_aggregate_only_and_reads_rotation(self):
++        with tempfile.TemporaryDirectory() as directory:
++            self.write_logs(directory,
++                            [self.row(user_hash="PRIVATE_USER_HASH", document_hash="PRIVATE_DOCUMENT_HASH")],
++                            rotated=[self.row(event="login_failure", category="authentication", result="denied")])
++            result = audit_review.review(directory, now=NOW)
++        self.assertEqual(result["status"], "OK")
++        self.assertEqual(result["files_reviewed"], 2)
++        self.assertEqual(result["counts"]["records_in_window"], 2)
++        self.assertEqual(result["counts"]["login_failure"], 1)
++        self.assertNotIn("PRIVATE", repr(result))
++        self.assertNotIn("user_hash", repr(result))
++        self.assertNotIn("document_hash", repr(result))
++
++    def test_login_failure_threshold_causes_attention(self):
++        with tempfile.TemporaryDirectory() as directory:
++            rows = [self.row(event="login_failure", category="authentication", result="denied") for _ in range(5)]
++            self.write_logs(directory, rows)
++            result = audit_review.review(directory, now=NOW)
++        self.assertEqual(result["status"], "ATTENTION")
++        self.assertTrue(result["breaches"]["login_failure"])
++
++    def test_denied_access_threshold_causes_attention(self):
++        with tempfile.TemporaryDirectory() as directory:
++            rows = [self.row(category="event_detail", result="denied") for _ in range(5)]
++            self.write_logs(directory, rows)
++            result = audit_review.review(directory, now=NOW)
++        self.assertEqual(result["counts"]["denied_access"], 5)
++        self.assertTrue(result["breaches"]["denied_access"])
++
++    def test_any_error_and_retention_error_are_attention(self):
++        with tempfile.TemporaryDirectory() as directory:
++            self.write_logs(directory, [self.row(event="retention_execution", category="retention", result="error")])
++            result = audit_review.review(directory, now=NOW)
++        self.assertEqual(result["counts"]["error"], 1)
++        self.assertEqual(result["counts"]["retention_error"], 1)
++        self.assertTrue(result["breaches"]["error"])
++        self.assertTrue(result["breaches"]["retention_error"])
++
++    def test_malformed_invalid_and_future_timestamp_are_attention(self):
++        with tempfile.TemporaryDirectory() as directory:
++            future = NOW + timedelta(hours=1)
++            self.write_logs(directory, ["not json", json.dumps(["array"]),
++                                        self.row(at=future), json.dumps({"timestamp": NOW.isoformat()})])
++            result = audit_review.review(directory, now=NOW)
++        self.assertEqual(result["counts"]["malformed"], 4)
++        self.assertEqual(result["status"], "ATTENTION")
++
++    def test_old_valid_records_are_outside_window(self):
++        with tempfile.TemporaryDirectory() as directory:
++            self.write_logs(directory, [self.row(event="login_failure", category="authentication", result="denied",
++                                                 at=NOW - timedelta(days=31))])
++            result = audit_review.review(directory, now=NOW)
++        self.assertEqual(result["counts"]["records_in_window"], 0)
++        self.assertEqual(result["status"], "OK")
++
++    def test_review_is_read_only(self):
++        with tempfile.TemporaryDirectory() as directory:
++            self.write_logs(directory, [self.row()])
++            path = Path(directory) / "audit.jsonl"
++            before = path.read_bytes()
++            audit_review.review(directory, now=NOW)
++            self.assertEqual(path.read_bytes(), before)
++
++    def test_invalid_days_and_thresholds_rejected(self):
++        for days in (0, -1, 3651, 1.5, "30"):
++            with self.assertRaises(audit_review.AuditReviewError):
++                audit_review.review(days=days, now=NOW)
++        with self.assertRaises(audit_review.AuditReviewError):
++            audit_review.review(now=NOW, thresholds={"login_failure": 1})
++
++    def test_cli_json_contains_no_raw_identifier_fields(self):
++        with tempfile.TemporaryDirectory() as directory:
++            self.write_logs(directory, [self.row(user_hash="PRIVATE_USER_HASH")])
++            result = subprocess.run([sys.executable, "scripts/review_audit.py", "--log-dir", directory, "--json"],
++                                    cwd=ROOT, capture_output=True, text=True, timeout=30)
++        self.assertEqual(result.returncode, 0, result.stderr)
++        self.assertNotIn("PRIVATE", result.stdout)
++        self.assertNotIn("user_hash", result.stdout)
++
++
++
+ class ConfigurationAndELKTests(OfflineCase):
+     def test_dashboard_default_is_auth_required_with_http_development(self):
+         self.assertEqual(policy.dashboard_config_errors({}), [])

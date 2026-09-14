@@ -12,12 +12,17 @@
   <header class="site-header">
     <div class="header-inner">
       <a class="brand" href="{% url 'latest_data_table' %}"><span class="brand-mark">TI</span><span>위협 인텔리전스<span class="brand-caption">ANALYST DASHBOARD</span></span></a>
-      <span class="read-only"><span aria-hidden="true">●</span> 조회 전용</span>
-      {% if request.user.is_authenticated %}
-      <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}<button type="submit">로그아웃</button>
-      </form>
-      {% endif %}
+      <div class="header-actions">
+        <span class="read-only"><span aria-hidden="true">●</span> 조회 전용</span>
+        {% if request.user.is_staff %}
+        <a class="header-link" href="{% url 'governance_review' %}">Audit Review</a>
+        {% endif %}
+        {% if request.user.is_authenticated %}
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}<button type="submit">로그아웃</button>
+        </form>
+        {% endif %}
+      </div>
     </div>
   </header>
   <main class="page-shell">{% block content %}{% endblock %}</main>

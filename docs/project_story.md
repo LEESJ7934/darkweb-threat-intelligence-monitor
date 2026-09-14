@@ -80,7 +80,7 @@ Django unit test는 통과했지만 실제 로그인 POST에서 template의 `no-
 
 ## 6. 검증 결과
 
-최종 Day13 기준 확인한 대표 결과입니다.
+ISMS-P 확장 전 최종 baseline에서 확인한 대표 결과입니다. 이번 확장 후 최종 PASS 수는 로컬 `.venv`에서 재검증한 뒤 갱신합니다.
 
 - root unittest: 266 PASS
 - Django `mongoDbConnect`: 77 PASS
@@ -103,6 +103,7 @@ Django unit test는 통과했지만 실제 로그인 POST에서 template의 `no-
 - `NEW/UPDATED` 위험도 알림에 deterministic alert ID, retry/lease, 전송 이력을 적용하고 Telegram 실환경 E2E로 중복 방지와 재시작 복구 검증
 - MongoDB 데이터를 Monstache로 Elasticsearch/Kibana에 실시간 투영하고 direct-read·change-stream·resume을 실제 Docker 환경에서 검증
 - Django 인증·감사로그, metadata 최소화/redaction, retention DRY RUN, source lifecycle을 추가해 보안·개인정보/GRC 관점의 운영 통제 보완
+- ISMS-P 통제항목 기반 모의진단으로 자산·데이터 흐름·Risk Register·GAP·증적을 연결하고, Analyst/Security Admin 권한 분리와 read-only Audit Review를 추가
 
 ## 8. 포트폴리오용 설명
 
@@ -135,7 +136,11 @@ MongoDB의 운영 데이터를 유지하면서 Elasticsearch를 분석용 read m
 **Q. UNAVAILABLE source의 crawler를 왜 삭제하지 않았나요?**
 현재 live availability와 parser 구현의 재현성은 별개라서 fixture와 parser는 보존하고 scheduler 자동 실행만 lifecycle 상태로 제어했습니다.
 
-## 11. 설명할 때 지킬 경계
+## 11. ISMS-P 모의진단 확장
+
+기존 governance 기능을 인증 충족으로 과장하지 않고, `docs/isms_p/`에 범위·자산·데이터 흐름·GAP Matrix·Risk Register·Risk Treatment·Evidence Index를 분리했습니다. 실제 코드 GAP 중에서는 (1) Analyst와 Security Admin의 governance 권한 분리, (2) 최근 30일 감사로그 aggregate review를 구현했습니다. 이 확장은 실제 인증심사 수행이 아니라 자체 시스템을 대상으로 한 **ISMS-P 통제항목 기반 모의 보안진단 및 개선**입니다.
+
+## 12. 설명할 때 지킬 경계
 
 이 프로젝트를 설명할 때 다음 표현은 피합니다.
 
