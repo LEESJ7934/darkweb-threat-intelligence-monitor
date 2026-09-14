@@ -1,0 +1,37 @@
+{% extends "mongoDbConnect/base.html" %}
+{% block title %}Audit Review · 위협 인텔리전스{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <div class="eyebrow">SECURITY ADMIN · READ ONLY</div>
+    <h1>Audit Review</h1>
+    <p>최근 {{ review.window_days }}일의 감사로그를 원문 식별자 없이 집계합니다.</p>
+  </div>
+  <span class="review-status {% if review.status == 'ATTENTION' %}attention{% else %}ok{% endif %}">{{ review.status }}</span>
+</section>
+
+<div class="summary-grid review-grid">
+  <article class="summary-card"><div class="summary-label">검토 레코드</div><div class="summary-value">{{ review.counts.records_in_window }}</div><div class="summary-caption">UTC window</div></article>
+  <article class="summary-card"><div class="summary-label">로그인 실패</div><div class="summary-value">{{ review.counts.login_failure }}</div><div class="summary-caption">기준 {{ review.thresholds.login_failure }}</div></article>
+  <article class="summary-card"><div class="summary-label">접근 거부</div><div class="summary-value">{{ review.counts.denied_access }}</div><div class="summary-caption">기준 {{ review.thresholds.denied_access }}</div></article>
+  <article class="summary-card"><div class="summary-label">오류</div><div class="summary-value">{{ review.counts.error }}</div><div class="summary-caption">기준 {{ review.thresholds.error }}</div></article>
+  <article class="summary-card"><div class="summary-label">형식 오류</div><div class="summary-value">{{ review.counts.malformed }}</div><div class="summary-caption">기준 {{ review.thresholds.malformed }}</div></article>
+</div>
+
+<section class="panel">
+  <div class="panel-heading"><div><h2>검토 기준</h2><div class="muted">원본 user/document hash와 요청 데이터는 이 화면에 출력하지 않습니다.</div></div></div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>항목</th><th>건수</th><th>Threshold</th><th>판정</th></tr></thead>
+      <tbody>
+        <tr><td>login_failure</td><td>{{ review.counts.login_failure }}</td><td>{{ review.thresholds.login_failure }}</td><td>{% if review.breaches.login_failure %}ATTENTION{% else %}OK{% endif %}</td></tr>
+        <tr><td>denied_access</td><td>{{ review.counts.denied_access }}</td><td>{{ review.thresholds.denied_access }}</td><td>{% if review.breaches.denied_access %}ATTENTION{% else %}OK{% endif %}</td></tr>
+        <tr><td>error</td><td>{{ review.counts.error }}</td><td>{{ review.thresholds.error }}</td><td>{% if review.breaches.error %}ATTENTION{% else %}OK{% endif %}</td></tr>
+        <tr><td>retention_error</td><td>{{ review.counts.retention_error }}</td><td>{{ review.thresholds.retention_error }}</td><td>{% if review.breaches.retention_error %}ATTENTION{% else %}OK{% endif %}</td></tr>
+        <tr><td>malformed</td><td>{{ review.counts.malformed }}</td><td>{{ review.thresholds.malformed }}</td><td>{% if review.breaches.malformed %}ATTENTION{% else %}OK{% endif %}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="panel-note">검토 시각 {{ review.reviewed_at }} · 파일 {{ review.files_reviewed }}개 · {{ review.privacy }}</p>
+</section>
+{% endblock %}

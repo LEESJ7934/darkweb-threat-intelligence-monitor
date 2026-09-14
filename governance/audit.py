@@ -12,10 +12,10 @@ from pathlib import Path
 import sys
 import threading
 
-EVENTS = frozenset({"dashboard_access", "event_detail_access", "login_success",
-                    "login_failure", "logout", "retention_execution"})
+EVENTS = frozenset({"dashboard_access", "event_detail_access", "governance_review_access",
+                    "login_success", "login_failure", "logout", "retention_execution"})
 RESULTS = frozenset({"success", "denied", "not_found", "error", "dry_run", "started", "deleted"})
-CATEGORIES = frozenset({"dashboard", "event_detail", "authentication", "retention"})
+CATEGORIES = frozenset({"dashboard", "event_detail", "governance_review", "authentication", "retention"})
 _LOGGER = None
 _LOCK = threading.Lock()
 

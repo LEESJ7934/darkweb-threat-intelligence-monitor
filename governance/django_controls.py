@@ -10,8 +10,16 @@ from django.utils.cache import add_never_cache_headers
 from . import audit
 
 
-def protected_view(category):
-    event = "dashboard_access" if category == "dashboard" else "event_detail_access"
+def protected_view(category, *, staff_only=False):
+    events = {
+        "dashboard": "dashboard_access",
+        "event_detail": "event_detail_access",
+        "governance_review": "governance_review_access",
+    }
+    try:
+        event = events[category]
+    except KeyError as error:
+        raise ValueError("invalid protected view category") from error
 
     def decorate(view):
         @wraps(view)
@@ -28,6 +36,8 @@ def protected_view(category):
                       and not authenticated):
                     # Do not copy search text or document IDs into the login URL.
                     response = redirect_to_login("/", settings.LOGIN_URL)
+                elif staff_only and not (authenticated and user.is_staff):
+                    response = HttpResponseForbidden("Security Admin role is required.")
                 else:
                     response = view(request, *args, **kwargs)
             except Exception:
