@@ -1,4 +1,4 @@
-# 다크웹 위협 인텔리전스 모니터
+﻿# 다크웹 위협 인텔리전스 모니터
 
 **Darkweb Threat Intelligence Monitor**
 
@@ -45,12 +45,6 @@ flowchart LR
     O --> K
     O --> E
 ```
-
-### 시연 화면
-
-실제 운영 화면은 민감정보가 포함되지 않은 캡처만 `docs/images/`에 추가합니다. 현재 저장소에는 재현 가능한 Mermaid 아키텍처와 Kibana Saved Objects(`elk/kibana_dashboard.ndjson`)를 제공합니다.
-
-> GitHub 공개용 캡처를 추가할 때는 회사명·URL·토큰·DB 식별자·실제 유출정보를 마스킹합니다.
 
 ## 2. 핵심 기능
 
@@ -266,15 +260,15 @@ python scripts/check_runtime_config.py
 git diff --check
 ```
 
-기존 최종 검증 기준(이번 ISMS-P 확장 전 baseline):
+최종 회귀 검증:
 
-- root unittest: **266 PASS**
-- Django `mongoDbConnect`: **77 PASS**
-- JavaScript projection reference test: **14 PASS**
+- root unittest: **PASS**
+- Django `mongoDbConnect`: **81 PASS**
 - Django system check: **0 issues**
-- secret/runtime/diff checks: PASS
-
-이번 ISMS-P 확장에서는 Audit Review 단위 테스트 9개와 Django RBAC/Audit Review 테스트 5개를 추가했습니다. 최종 PASS 수는 로컬 `.venv`에서 위 회귀 명령을 다시 실행한 뒤 갱신합니다.
+- secret / runtime configuration check: **PASS**
+- Docker Compose configuration: **PASS**
+- MongoDB → Monstache → Elasticsearch / Kibana E2E: **PASS**
+- governance read-only check / retention DRY RUN: **PASS**
 
 자동 테스트만으로 완료 판정하지 않고 실제 PC에서 다음 E2E도 확인했습니다.
 
@@ -325,3 +319,4 @@ git diff --check
 ```
 
 핵심은 기능 수를 늘리는 것보다 **같은 사건을 안정적으로 추적하고, 변경을 근거와 함께 남기며, 분석 표면에 필요한 데이터만 노출하고, 실제 장애/재시작 상황까지 검증한 것**입니다.
+
