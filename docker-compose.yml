@@ -42,7 +42,7 @@ services:
     healthcheck:
       test:
         - CMD
-        - /usr/share/kibana/node/bin/node
+        - /usr/share/kibana/node/glibc-217/bin/node
         - -e
         - >-
           const h=require('http');const r=h.get('http://127.0.0.1:5601/api/status',s=>{

@@ -188,11 +188,11 @@ class ELKTests(unittest.TestCase):
         self.assertEqual({r["namespace"] for r in config["script"]}, set(wanted))
         self.assertTrue(all(r["path"] == "/config/project_document.js" for r in config["script"]))
 
-    def test_stateful_token_resume_scope(self):
+    def test_stateful_resume_scope(self):
         config = self.rendered()
         self.assertTrue(config["resume"])
         self.assertTrue(config["direct-read-stateful"])
-        self.assertEqual(config["resume-strategy"], 1)
+        self.assertEqual(config["resume-strategy"], 0)
         self.assertFalse(config["resume-write-unsafe"])
         self.assertFalse(config["exit-after-direct-reads"])
         self.assertNotEqual(config["resume-name"], self.rendered(prefix="other")["resume-name"])
