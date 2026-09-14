@@ -44,7 +44,6 @@ flowchart LR
     O --> E
 ```
 
-자세한 설계 판단은 [`docs/architecture.md`](docs/architecture.md), 실제 검증 근거는 [`docs/validation.md`](docs/validation.md)를 참고하세요.
 
 ## 2. 핵심 기능
 
