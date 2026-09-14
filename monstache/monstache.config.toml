@@ -16,7 +16,7 @@ exit-after-direct-reads = false
 # Separate metadata DB; token and completed-read state are scoped by resume-name.
 config-database-name = "monstache"
 resume = true
-resume-strategy = 1
+resume-strategy = 0
 resume-name = "{{index . "DB_NAME"}}:{{index . "ELK_INDEX_PREFIX"}}:day12-v1"
 resume-write-unsafe = false
 dropped-collections = false

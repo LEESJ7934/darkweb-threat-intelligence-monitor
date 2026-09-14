@@ -18,7 +18,7 @@ alert_state와 Monstache 자체 상태 컬렉션은 동기화 목록에 없습�
 
 Go template의 환경변수 접근은 {{index . "DB_NAME"}} 형식이고 -tpl로 활성화합니다.
 초기 direct read와 change stream을 함께 사용합니다. direct-read-stateful은 완료된 초기 읽기의 반복을 막습니다.
-resume-strategy=1의 토큰과 초기 읽기 상태는 monstache DB에 저장되며,
+resume-strategy=0의 토큰과 초기 읽기 상태는 monstache DB에 저장되며,
 resume-name에 DB_NAME과 접두사를 모두 넣어 테스트/운영 상태를 구분합니다.
 정상 재시작은 완료된 전체 읽기를 건너뜁니다. 중간에 실패한 초기 읽기는 반복될 수 있습니다.
 관련 옵션은 [Monstache 설정 문서](https://rwynn.github.io/monstache-site/config/)와
