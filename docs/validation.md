@@ -4,7 +4,7 @@
 
 ## 1. Offline regression
 
-최종 Day13 기준 실제 PC에서 다음을 다시 확인했습니다.
+최종 거버넌스 기준 실제 PC에서 다음을 다시 확인했습니다.
 
 | 검증 | 결과 |
 | --- | ---: |
@@ -61,7 +61,7 @@ live source availability와 parser correctness는 같은 문제가 아니므로 
 - field-level change history
 - NEW/UPDATED/SUPPRESSED alert history
 
-Day13 접근통제 적용 후에는 실제 브라우저에서 다음 흐름을 검증했습니다.
+거버넌스 접근통제 적용 후에는 실제 브라우저에서 다음 흐름을 검증했습니다.
 
 ```text
 미인증 / 요청
@@ -83,7 +83,7 @@ Day13 접근통제 적용 후에는 실제 브라우저에서 다음 흐름을 �
 
 ## 5. ELK E2E — 세 단계로 이해하기
 
-Day12에서 사용한 `revision 1/2/3`은 Git revision이 아니라 **같은 합성 사건의 상태 변화 번호**였습니다. 의미는 아래 세 질문입니다.
+ELK 통합에서 사용한 `revision 1/2/3`은 Git revision이 아니라 **같은 합성 사건의 상태 변화 번호**였습니다. 의미는 아래 세 질문입니다.
 
 ### 상태 1 — 처음 켰을 때 기존 데이터를 가져오는가
 
@@ -145,7 +145,7 @@ JavaScript projection의 `iso()`가 실제 Monstache/Otto 런타임에서 BSON d
 4. 알림 상태 분포
 5. 최근 변경 이벤트
 
-Dashboard와 관련 Lens/Saved Search/Data View를 함께 export했으며 `elk/darkweb_day12_dashboard.ndjson`에 저장했습니다.
+Dashboard와 관련 Lens/Saved Search/Data View를 함께 export했으며 `elk/kibana_dashboard.ndjson`에 저장했습니다.
 
 ## 8. Governance 실제 PC 검증
 

@@ -239,7 +239,7 @@ class AccessControlTests(TestCase):
 
 
 class StartupControlsTests(SimpleTestCase):
-    def run_settings(self, values, *, legacy=False):
+    def run_settings(self, values):
         env = {**os.environ, "DJANGO_DEBUG": "True", "DASHBOARD_REQUIRE_AUTH": "True",
                "DJANGO_SECURE_COOKIES": "False", **values}
         script = """
@@ -253,7 +253,7 @@ with patch('dotenv.load_dotenv'), patch('socket.socket.connect', side_effect=Ass
         print(type(error).__name__ + ': ' + str(error))
         sys.exit(1)
     print(settings.DASHBOARD_REQUIRE_AUTH, settings.SESSION_COOKIE_SECURE)
-""" % ("webapp" if legacy else "DjangoProject")
+""" % "DjangoProject"
         return subprocess.run([sys.executable, "-c", script], cwd=ROOT, env=env,
                               capture_output=True, text=True, timeout=30)
 
@@ -278,8 +278,3 @@ with patch('dotenv.load_dotenv'), patch('socket.socket.connect', side_effect=Ass
 
     def test_malformed_auth_setting_rejected_at_startup(self):
         self.assertEqual(self.run_settings({"DASHBOARD_REQUIRE_AUTH": "invalid"}).returncode, 1)
-
-    def test_legacy_webapp_cannot_bypass_canonical_controls(self):
-        result = self.run_settings({}, legacy=True)
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("Legacy webapp entry point is disabled", result.stdout)

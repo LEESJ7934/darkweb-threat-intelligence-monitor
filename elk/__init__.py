@@ -1,1 +1,1 @@
-"""Day 12 ELK configuration and read-only verification helpers."""
+"""ELK 통합 ELK configuration and read-only verification helpers."""

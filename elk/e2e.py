@@ -7,28 +7,28 @@ from .config import COLLECTIONS, ElkError
 from .http import wait_until
 from .setup import existing_mapping
 
-EVENT_ID = "day12-synthetic-event"
-EVENT_KEY = sha256(b"day12-synthetic-event-key").hexdigest()
-SOURCE = "day12_synthetic"
-PRIVATE_MARKER = "day12-private-field-must-not-reach-es"
+EVENT_ID = "elk-synthetic-event"
+EVENT_KEY = sha256(b"elk-synthetic-event-key").hexdigest()
+SOURCE = "elk_synthetic"
+PRIVATE_MARKER = "elk-private-field-must-not-reach-es"
 
 
 def guard(config, database):
-    if (database != config.database or re.fullmatch(r"day12_elk_e2e(?:_[a-z0-9_]{1,40})?", database) is None
-            or not config.prefix.startswith(("day12-", "day12_"))):
+    if (database != config.database or re.fullmatch(r"elk_e2e(?:_[a-z0-9_]{1,40})?", database) is None
+            or not config.prefix.startswith(("elk-", "elk_"))):
         raise ElkError("test_database_and_prefix_required", "E2E")
 
 
 def history_id(revision):
-    return sha256(f"day12-history-{revision}".encode()).hexdigest()
+    return sha256(f"elk-history-{revision}".encode()).hexdigest()
 
 
 def alert_id(revision):
-    return sha256(f"day12-alert-{revision}".encode()).hexdigest()
+    return sha256(f"elk-alert-{revision}".encode()).hexdigest()
 
 
 def fingerprint(revision):
-    return sha256(f"day12-synthetic-content-{revision}".encode()).hexdigest()
+    return sha256(f"elk-synthetic-content-{revision}".encode()).hexdigest()
 
 
 def current(database):
@@ -42,8 +42,8 @@ def seed(config, database_name, database, *, now=None):
     guard(config, database_name)
     stamp = now or datetime.now(timezone.utc)
     record = {"_id": EVENT_ID, "event_key": EVENT_KEY, "source": SOURCE,
-              "identity_basis": "source+company_url", "company_name": "Synthetic Day12 Company",
-              "company_url": "https://day12.invalid", "country": "ZZ",
+              "identity_basis": "source+company_url", "company_name": "Synthetic ELK Company",
+              "company_url": "https://elk.invalid", "country": "ZZ",
               "description": "Synthetic metadata only", "data_contents": "Synthetic test overview",
               "data_size": "10 GB", "publication_date": "revision-1", "source_url": "unknown",
               "first_seen": stamp, "last_seen": stamp, "scraped_time": stamp,
@@ -59,7 +59,7 @@ def seed(config, database_name, database, *, now=None):
     alert = {"_id": alert_id(1), "event_type": "NEW", "event_key": EVENT_KEY,
              "document_id": EVENT_ID, "history_id": None, "source": SOURCE, "actor": SOURCE,
              "risk_level": "INFO", "risk_reason": "Synthetic initial ELK fixture",
-             "status": "SUPPRESSED", "suppression_reason": "day12_synthetic_test",
+             "status": "SUPPRESSED", "suppression_reason": "elk_synthetic_test",
              "attempt_count": 0, "changed_fields": [], "schema_version": 1,
              "created_at": row["first_seen"], "updated_at": row["first_seen"], "sent_at": None,
              "claim_token": PRIVATE_MARKER, "resume_token": PRIVATE_MARKER,
@@ -86,7 +86,7 @@ def update(config, database_name, database, revision, *, now=None):
              "risk_level": "INFO", "risk_reason": "Synthetic ELK fixture; no Telegram delivery",
              "actor": SOURCE, "status": "SUPPRESSED", "attempt_count": 0,
              "created_at": stamp, "updated_at": stamp, "sent_at": None,
-             "suppression_reason": "day12_synthetic_test", "changed_fields": ["data_size"],
+             "suppression_reason": "elk_synthetic_test", "changed_fields": ["data_size"],
              "schema_version": 1, "claim_token": PRIVATE_MARKER, "resume_token": PRIVATE_MARKER,
              "message": PRIVATE_MARKER, "raw_exception": PRIVATE_MARKER}
     database["leak_history"].update_one({"_id": history["_id"]}, {"$setOnInsert": history}, upsert=True)
@@ -158,4 +158,4 @@ def verify_fixture(config, database_name, database, es, revision, *, wait=60, em
     count = wait_until(lambda: verify_once(config, database_name, database, es, revision), wait)
     emit(f"[PASS] synthetic revision={revision}, document IDs/content/timestamps={count}")
     emit("[PASS] private alert fields excluded")
-    emit("DAY12_ELK_E2E: PASS")
+    emit("ELK_E2E: PASS")

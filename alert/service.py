@@ -126,7 +126,7 @@ def convert_change(change, current):
         event_type = "NEW"
         document_id = _document_id(document.get("_id"))
         effective = {name: deepcopy(document[name]) for name in CURRENT_PROJECTION if name in document}
-        # Read-only compatibility for a v1 insert; reuse Day 9's identity function.
+        # Read-only compatibility for a v1 insert; reuse 사건 이력 관리's identity function.
         key = document.get("event_key")
         if key is None:
             try:

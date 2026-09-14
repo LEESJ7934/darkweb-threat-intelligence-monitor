@@ -1,4 +1,4 @@
-"""Day 9 event identity and observed metadata changes. No network at import.
+"""사건 이력 관리 event identity and observed metadata changes. No network at import.
 
 History is written before current state, without cross-collection transactions.
 Replaying a failed change reuses its deterministic history ID.

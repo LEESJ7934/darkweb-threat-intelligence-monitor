@@ -25,7 +25,7 @@ class Http:
     def request(self, method, path, body=None, *, allow_missing=False, text=False):
         if method not in {"GET", "HEAD", "POST", "PUT"} or not path.startswith("/") or path.startswith("//"):
             raise ElkError("unsupported_request", self.service)
-        headers = {"Accept": "application/json", "kbn-xsrf": "day12"}
+        headers = {"Accept": "application/json", "kbn-xsrf": "elk-sync"}
         data = None
         if body is not None:
             headers["Content-Type"] = "application/json"

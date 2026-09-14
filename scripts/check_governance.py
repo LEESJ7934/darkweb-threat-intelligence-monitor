@@ -40,15 +40,15 @@ def main(argv=None):
             settings = elk_config()
             check_exposure(settings, Http(settings.elasticsearch, "Elasticsearch"))
             print("[PASS] ELK mapping and private source field checks")
-        print("DAY13_GOVERNANCE_CHECK: " + ("PASS" if passed else "FAIL"))
+        print("GOVERNANCE_CHECK: " + ("PASS" if passed else "FAIL"))
         return 0 if passed else 1
     except (ElkError, PolicyError, ValueError):
         print("[FAIL] governance_configuration_or_service_error")
-        print("DAY13_GOVERNANCE_CHECK: FAIL")
+        print("GOVERNANCE_CHECK: FAIL")
         return 1
     except Exception:
         print("[FAIL] governance_check_error")
-        print("DAY13_GOVERNANCE_CHECK: FAIL")
+        print("GOVERNANCE_CHECK: FAIL")
         return 1
 
 

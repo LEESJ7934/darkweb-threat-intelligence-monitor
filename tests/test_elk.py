@@ -1,4 +1,4 @@
-"""Offline Day 12 contracts: no real HTTP, Docker or MongoDB."""
+"""Offline ELK 통합 contracts: no real HTTP, Docker or MongoDB."""
 from copy import deepcopy
 from dataclasses import replace
 from datetime import datetime, timezone
@@ -19,12 +19,12 @@ from elk.mappings import data_view, index_template, mapping, mapping_matches, pr
 from elk.mongo import mongo_database
 from elk.setup import setup
 from elk.verify import verify
-from scripts import day12_elk_e2e, setup_elk
+from scripts import elk_e2e, setup_elk
 from scripts.check_runtime_config import validate_config
 
 ROOT = Path(__file__).resolve().parents[1]
 NOW = datetime(2026, 9, 10, 12, tzinfo=timezone.utc)
-CONFIG = Config("day12_elk_e2e", "day12-e2e", "http://localhost:9200",
+CONFIG = Config("elk_e2e", "elk-e2e", "http://localhost:9200",
                 "http://localhost:5601", "http://127.0.0.1:8080")
 ENV = {"DB_URI": "mongodb://unused", "DB_NAME": CONFIG.database,
        "ELASTICSEARCH_URL": CONFIG.elasticsearch, "KIBANA_URL": CONFIG.kibana,
@@ -127,7 +127,7 @@ class ELKTests(unittest.TestCase):
         return verify(CONFIG, self.es, self.kibana, self.monstache, self.db,
                       wait=0, emit=self.messages.append)
 
-    def rendered(self, db="day12_elk_e2e", prefix="day12-e2e"):
+    def rendered(self, db="elk_e2e", prefix="elk-e2e"):
         text = (ROOT / "monstache/monstache.config.toml").read_text()
         self.assertNotIn("darkweb.leaked_data", text)
         text = text.replace('{{index . "DB_NAME"}}', db).replace('{{index . "ELK_INDEX_PREFIX"}}', prefix)
@@ -135,7 +135,7 @@ class ELKTests(unittest.TestCase):
         return tomllib.loads(text)
 
     def test_valid_prefixes(self):
-        for value in ("darkweb-monitor", "day12_e2e", "day12-e2e", "a", "9" * 64):
+        for value in ("darkweb-monitor", "elk_e2e", "elk-e2e", "a", "9" * 64):
             self.assertEqual(validate_prefix(value), value)
 
     def test_invalid_prefixes(self):
@@ -145,7 +145,7 @@ class ELKTests(unittest.TestCase):
 
     def test_exact_index_names_and_stable_view_ids(self):
         self.assertEqual([CONFIG.index(k) for k in COLLECTIONS],
-                         ["day12-e2e-events", "day12-e2e-history", "day12-e2e-alerts"])
+                         ["elk-e2e-events", "elk-e2e-history", "elk-e2e-alerts"])
         self.assertEqual(len({CONFIG.view_id(k) for k in COLLECTIONS}), 3)
         self.assertNotEqual(CONFIG.index("events"), replace(CONFIG, prefix="other").index("events"))
 
@@ -300,7 +300,7 @@ class ELKTests(unittest.TestCase):
             self.assertIn(CONFIG.prefix, view["name"])
 
     def test_data_view_names_are_unique_across_prefixes(self):
-        other = replace(CONFIG, prefix="day12-e2e-other")
+        other = replace(CONFIG, prefix="elk-e2e-other")
         for kind in COLLECTIONS:
             self.assertNotEqual(data_view(CONFIG, kind)["name"], data_view(other, kind)["name"])
 
@@ -350,7 +350,7 @@ class ELKTests(unittest.TestCase):
             self.es.counts[CONFIG.index(kind)] = count
         self.assertEqual(self.check(), {"events": (2, 2), "history": (3, 3), "alerts": (4, 4)})
         self.assertEqual(self.db.writes, 0)
-        self.assertIn("DAY12_ELK_PIPELINE: PASS", self.messages)
+        self.assertIn("ELK_PIPELINE: PASS", self.messages)
 
     def test_each_count_mismatch_fails(self):
         self.prepare()
@@ -406,7 +406,7 @@ class ELKTests(unittest.TestCase):
             calls.append((request, timeout))
             return io.BytesIO(b'{"acknowledged":true}')
         Http(CONFIG.kibana, "Kibana", opener=SimpleNamespace(open=open_request)).request("POST", "/api/test", {})
-        self.assertEqual(calls[0][0].get_header("Kbn-xsrf"), "day12")
+        self.assertEqual(calls[0][0].get_header("Kbn-xsrf"), "elk-sync")
         self.assertEqual(calls[0][1], 5)
         self.assertEqual(json.loads(calls[0][0].data), {})
 
@@ -479,16 +479,16 @@ class ELKTests(unittest.TestCase):
                 patch.object(setup_elk, "setup", side_effect=ElkError("unreachable", "Elasticsearch")), \
                 patch("sys.stdout", out):
             self.assertEqual(setup_elk.main(["--wait", "0"]), 1)
-        self.assertIn("DAY12_ELK_SETUP: FAIL", out.getvalue())
+        self.assertIn("ELK_SETUP: FAIL", out.getvalue())
         self.assertNotIn("Traceback", out.getvalue())
 
     def test_e2e_guards_before_clients(self):
         for config, name in ((replace(CONFIG, database="darkweb"), "darkweb"),
                              (replace(CONFIG, prefix="darkweb-monitor"), CONFIG.database),
                              (CONFIG, "different")):
-            with patch.object(day12_elk_e2e, "load_config", return_value=config), \
-                    patch.object(day12_elk_e2e, "mongo_database") as mongo, patch("sys.stdout", io.StringIO()):
-                self.assertEqual(day12_elk_e2e.main(["seed", "--database", name]), 1)
+            with patch.object(elk_e2e, "load_config", return_value=config), \
+                    patch.object(elk_e2e, "mongo_database") as mongo, patch("sys.stdout", io.StringIO()):
+                self.assertEqual(elk_e2e.main(["seed", "--database", name]), 1)
                 mongo.assert_not_called()
 
     def test_synthetic_seed_idempotent(self):

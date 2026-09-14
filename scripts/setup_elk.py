@@ -1,4 +1,4 @@
-"""Install Day 12 templates and data views; explicitly run on the user's PC."""
+"""Install ELK 통합 templates and data views; explicitly run on the user's PC."""
 import argparse
 from pathlib import Path
 import sys
@@ -24,7 +24,7 @@ def main(argv=None):
         return 0
     except ElkError as error:
         print(f"[FAIL] {error.service}: {error.category}")
-        print("DAY12_ELK_SETUP: FAIL")
+        print("ELK_SETUP: FAIL")
         return 1
 
 

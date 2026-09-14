@@ -111,7 +111,7 @@ authenticated request
 → 기존 read-only dashboard query
 ```
 
-목표는 Day11의 조회/필터/상세 기능을 최대한 그대로 유지하면서 Day13에 인증과 감사 통제를 추가하는 것이었습니다.
+목표는 분석 대시보드의 조회/필터/상세 기능을 최대한 그대로 유지하면서 거버넌스에 인증과 감사 통제를 추가하는 것이었습니다.
 
 운영 모드(`DJANGO_DEBUG=False`)에서는 인증 비활성화와 wildcard host를 거부합니다.
 

@@ -69,6 +69,6 @@ def logout(sender, request, user, **kwargs):
 
 
 def connect_signals():
-    user_logged_in.connect(login_success, dispatch_uid="day13_login_success", weak=False)
-    user_login_failed.connect(login_failure, dispatch_uid="day13_login_failure", weak=False)
-    user_logged_out.connect(logout, dispatch_uid="day13_logout", weak=False)
+    user_logged_in.connect(login_success, dispatch_uid="governance_login_success", weak=False)
+    user_login_failed.connect(login_failure, dispatch_uid="governance_login_failure", weak=False)
+    user_logged_out.connect(logout, dispatch_uid="governance_logout", weak=False)

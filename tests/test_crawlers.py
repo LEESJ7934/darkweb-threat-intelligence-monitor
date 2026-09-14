@@ -1,4 +1,4 @@
-"""Offline-only Day 8 tests: synthetic HTML, mocked browser and MongoDB."""
+"""Offline-only 크롤러 정비 tests: synthetic HTML, mocked browser and MongoDB."""
 from contextlib import ExitStack, redirect_stderr, redirect_stdout
 from datetime import datetime, timedelta, timezone
 import hashlib

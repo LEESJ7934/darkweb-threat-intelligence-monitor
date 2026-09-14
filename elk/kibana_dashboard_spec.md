@@ -1,4 +1,4 @@
-# Day 12 Kibana Dashboard 명세
+# ELK 통합 Kibana Dashboard 명세
 
 대상 버전은 Kibana 8.15.3입니다. Work에서는 Saved Object 내부 JSON을 만들지 않습니다.
 PC에서 아래 패널을 구성하고 실제 Kibana가 내보낸 NDJSON을 최종 결과물로 사용합니다.
@@ -39,7 +39,7 @@ setup_elk.py가 아래 세 뷰를 설치합니다. ID는 인덱스 이름과 같
 6. 각 패널에 표의 제목을 붙이고 저장합니다.
 7. Discover에서 Change History 뷰를 골라 필요한 열을 추가하고 changed_at 내림차순으로 정렬합니다.
 8. 검색을 저장한 뒤 대시보드의 Add from library로 추가합니다.
-9. 대시보드를 **Day12 Darkweb Pipeline — 사용한 접두사**라는 이름으로 저장합니다.
+9. 대시보드를 **Darkweb ELK Pipeline — 사용한 접두사**라는 이름으로 저장합니다.
 
 E2E 합성 알림은 INFO/SUPPRESSED입니다. HIGH나 SENT가 없는 것이 정상입니다.
 데이터가 보이지 않으면 인덱스 접두사와 전역 시간 범위를 먼저 확인합니다.
@@ -48,7 +48,7 @@ E2E 합성 알림은 INFO/SUPPRESSED입니다. HIGH나 SENT가 없는 것이 정
 
 Stack Management → Saved Objects에서 방금 만든 대시보드만 선택하고 Export합니다.
 관련 시각화·검색·Data views가 포함되는 옵션을 유지합니다.
-파일명은 darkweb_day12_dashboard.ndjson으로 저장하고 Kibana 8.15.3에서 생성한 파일임을 기록합니다.
+파일명은 kibana_dashboard.ndjson으로 저장하고 Kibana 8.15.3에서 생성한 파일임을 기록합니다.
 테스트 접두사를 사용한 뷰도 export에 포함되므로 운영 접두사로 자동 변환되지는 않습니다.
 Export는 검색 결과 CSV와 다릅니다.
 이 절차와 관련 객체 포함 방식은 [Elastic Saved objects 문서](https://www.elastic.co/docs/explore-analyze/find-and-organize/saved-objects#import-and-export)에 근거합니다.

@@ -1,4 +1,4 @@
-"""Day 10 offline contracts. Synthetic metadata and fake Mongo/Telegram only."""
+"""알림 파이프라인 offline contracts. Synthetic metadata and fake Mongo/Telegram only."""
 import asyncio
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
@@ -552,7 +552,7 @@ with patch.dict(os.environ, {}, clear=True), patch.dict(sys.modules, {'telegram'
         self.assertIn("ALERT_MIN_LEVEL", output.getvalue())
         run.assert_not_called()
 
-    async def test_legacy_insert_reuses_day9_identity_without_mutation(self):
+    async def test_legacy_insert_reuses_event_identity_without_mutation(self):
         data = document()
         data.pop("event_key")
         before = deepcopy(data)

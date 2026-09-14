@@ -22,7 +22,7 @@ def normalize_text(value: str | None) -> str:
 
 
 def metadata_text(value) -> str:
-    """Storage normalization, including the pre-Day 8 missing-value spellings."""
+    """Storage normalization, including the 초기 missing-value spellings."""
     if not isinstance(value, str):
         return UNKNOWN
     value = " ".join(value.split())

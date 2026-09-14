@@ -7,7 +7,7 @@ from .policy import prohibited_fields
 
 def check_exposure(config, es):
     for kind, collection in COLLECTIONS.items():
-        # Day12 verifies strict mappings, allowed fields and DB/prefix ownership.
+        # ELK 통합 verifies strict mappings, allowed fields and DB/prefix ownership.
         if existing_mapping(es, config, kind) is None:
             raise ElkError("index_missing", "Elasticsearch")
         # Inspect _source KEYS on the server as well: an old non-indexed field
@@ -15,7 +15,7 @@ def check_exposure(config, es):
         body = {
             "size": 0,
             "timeout": "5s",
-            "runtime_mappings": {"day13_private_source_field": {
+            "runtime_mappings": {"governance_private_source_field": {
                 "type": "boolean",
                 "script": {
                     "source": "boolean found = false; for (def k : params._source.keySet()) { "
@@ -23,7 +23,7 @@ def check_exposure(config, es):
                     "params": {"blocked": sorted(prohibited_fields(collection, analytics=True))},
                 },
             }},
-            "query": {"term": {"day13_private_source_field": True}},
+            "query": {"term": {"governance_private_source_field": True}},
             "track_total_hits": True,
         }
         result = es.request("POST", "/" + config.index(kind) + "/_search", body)

@@ -1,4 +1,4 @@
-# Day 12 ELK 운영 및 PC 검증
+# ELK 통합 ELK 운영 및 PC 검증
 
 ## 구성과 변경 이유
 
@@ -42,7 +42,7 @@ elk/mappings.py에서 세 composable template을 생성합니다.
 문자 분류값은 keyword, 회사명은 text + keyword, 설명/유출 내용은 text,
 관찰/변경/알림 시각은 date, 횟수/schema_version은 integer입니다.
 publication_date는 원문 게시일 표현을 유지하는 keyword입니다.
-history.changes는 Day 9의 메타데이터 8개와 before/after만 허용합니다.
+history.changes는 사건 이력 관리의 메타데이터 8개와 before/after만 허용합니다.
 
 dynamic=strict와 JS allowlist를 함께 사용합니다.
 Mongo _id는 ES 문서 ID로 유지하고 _source의 일반 필드로 복사하지 않습니다.
@@ -52,7 +52,7 @@ ObjectId 참조는 Monstache에서 hex 문자열로 전달되며 document_id는 
 alert_log의 claim_token, resume_token, message, raw_exception 등 비허용 필드는 ES로 보내지 않습니다.
 허용된 문자열에도 알려진 Mongo URI, Telegram 토큰 모양, URL 자격증명, 비밀값 대입 패턴을 가립니다.
 임의의 비밀값 전체를 탐지하는 DLP 기능은 아니므로 허용 메타데이터에 자격증명을 넣는 운영은 하지 않습니다.
-Mongo 원문 및 Day 10 알림 처리 로직은 바뀌지 않습니다.
+Mongo 원문 및 알림 파이프라인 알림 처리 로직은 바뀌지 않습니다.
 legacy 문서의 관찰 필드가 없으면 ES 투영에서만 scraped_time을 대체 시각으로 사용합니다.
 
 템플릿 설치는 [Elasticsearch Index Template API](https://www.elastic.co/docs/api/doc/elasticsearch/v8/operation/operation-indices-put-index-template),
@@ -70,7 +70,7 @@ ES/Kibana URL은 자격증명·쿼리·경로 없는 HTTP(S) origin만 지원합
 ELK_INDEX_PREFIX는 소문자/숫자로 시작하는 최대 64자의 소문자, 숫자, -, _입니다.
 설정이 아예 없으면 darkweb-monitor를 사용하지만 명시적 빈 값은 거부합니다.
 DB_NAME은 이 도구에서 이식 가능한 영문/숫자/-/_ 이름 1~63자를 사용하며 내부 DB 이름은 거부합니다.
-원본과 상태 DB를 분리하기 위한 Day 12 도구의 제한입니다.
+원본과 상태 DB를 분리하기 위한 ELK 통합 도구의 제한입니다.
 
 ES는 이미지에 포함된 curl로 응답을 확인하고, Kibana는 번들 Node로 /api/status를 확인합니다.
 ES의 curl 포함 여부는 [8.15.3 Dockerfile](https://github.com/elastic/elasticsearch/blob/v8.15.3/distribution/docker/src/docker/Dockerfile)에서 확인했습니다.
@@ -111,12 +111,12 @@ Node는 Work 변환 검사에 사용했으며 Python 도구 실행을 위한 신
 
 아래 이름을 처음 사용할 때의 절차입니다.
 이미 revision 2/3을 실행했다면 데이터를 초기화하지 말고 기존 단계를 이어가거나
-새 이름(예: day12_elk_e2e_2, day12-e2e-2)을 사용하세요.
+새 이름(예: elk_e2e_2, elk-e2e-2)을 사용하세요.
 DB를 바꾸면 접두사도 새로 선택해야 합니다.
 
 ~~~powershell
-$env:DB_NAME = "day12_elk_e2e"
-$env:ELK_INDEX_PREFIX = "day12-e2e"
+$env:DB_NAME = "elk_e2e"
+$env:ELK_INDEX_PREFIX = "elk-e2e"
 py scripts/check_runtime_config.py
 docker version
 docker compose config --quiet
@@ -133,10 +133,10 @@ DB_URI 계정은 테스트 DB와 monstache 상태 DB에도 접근할 수 있어�
 docker compose up -d elasticsearch kibana
 docker compose ps
 py scripts/setup_elk.py --wait 120
-py scripts/day12_elk_e2e.py seed --database day12_elk_e2e
+py scripts/elk_e2e.py seed --database elk_e2e
 ~~~
 
-setup은 DAY12_ELK_SETUP: PASS가 정상입니다.
+setup은 ELK_SETUP: PASS가 정상입니다.
 seed는 세 컬렉션에 각 1건의 합성 메타데이터를 준비합니다.
 합성 알림은 SUPPRESSED이며 Telegram API를 호출하지 않습니다.
 setup을 한 번 더 실행해도 Data views가 6개로 늘어나면 안 됩니다.
@@ -147,7 +147,7 @@ setup을 한 번 더 실행해도 Data views가 6개로 늘어나면 안 됩니�
 docker compose --profile sync up -d monstache
 Invoke-RestMethod http://127.0.0.1:8080/healthz
 py scripts/check_elk_pipeline.py --wait 120
-py scripts/day12_elk_e2e.py verify --database day12_elk_e2e --revision 1 --wait 120
+py scripts/elk_e2e.py verify --database elk_e2e --revision 1 --wait 120
 ~~~
 
 정상 건수: events 1/1, history 1/1, alerts 1/1 (Mongo/ES).
@@ -157,9 +157,9 @@ E2E 검사는 문서 3개의 ID/내용/시각과 알림 비공개 필드 제외�
 ### 5. 실시간 update/insert 확인
 
 ~~~powershell
-py scripts/day12_elk_e2e.py update --database day12_elk_e2e --revision 2
+py scripts/elk_e2e.py update --database elk_e2e --revision 2
 py scripts/check_elk_pipeline.py --wait 120
-py scripts/day12_elk_e2e.py verify --database day12_elk_e2e --revision 2 --wait 120
+py scripts/elk_e2e.py verify --database elk_e2e --revision 2 --wait 120
 ~~~
 
 같은 사건의 규모는 10 GB에서 20 GB로 바뀝니다.
@@ -171,10 +171,10 @@ E2E 검사는 총 5개 문서의 내용을 확인합니다.
 
 ~~~powershell
 docker compose --profile sync stop monstache
-py scripts/day12_elk_e2e.py update --database day12_elk_e2e --revision 3
+py scripts/elk_e2e.py update --database elk_e2e --revision 3
 docker compose --profile sync start monstache
 py scripts/check_elk_pipeline.py --wait 120
-py scripts/day12_elk_e2e.py verify --database day12_elk_e2e --revision 3 --wait 120
+py scripts/elk_e2e.py verify --database elk_e2e --revision 3 --wait 120
 ~~~
 
 규모는 30 GB, 정상 건수는 events 1/1, history 3/3, alerts 3/3입니다.
@@ -185,7 +185,7 @@ py scripts/day12_elk_e2e.py verify --database day12_elk_e2e --revision 3 --wait 
 
 ### 7. Kibana 확인 및 Export
 
-http://127.0.0.1:5601/ 에서 Data views의 인덱스 패턴이 day12-e2e-*인지 확인합니다.
+http://127.0.0.1:5601/ 에서 Data views의 인덱스 패턴이 elk-e2e-*인지 확인합니다.
 전역 시간 범위에 테스트 시각을 포함하고 elk/kibana_dashboard_spec.md대로 패널 5개를 만듭니다.
 실행 중인 Kibana의 Saved Objects Export로 NDJSON을 생성합니다.
 Work에서 dashboard 생성/Export가 완료됐다고 판정하지 않습니다.

@@ -31,14 +31,14 @@ def main(argv=None):
         for collection, counts in report.items():
             print(f"[INFO] {collection} expired={counts['expired']} missing={counts['missing']} "
                   f"invalid={counts['invalid']} future={counts['future']} deleted={counts.get('deleted', 0)}")
-        print("DAY13_RETENTION: PASS")
+        print("RETENTION_CHECK: PASS")
         return 0
     except Exception:
         audit.emit("retention_execution", category="retention", result="error")
         print("[FAIL] retention_configuration_or_database_error")
         if args.apply:
             print("[INFO] If deletion had started, some collections may already have been processed.")
-        print("DAY13_RETENTION: FAIL")
+        print("RETENTION_CHECK: FAIL")
         return 1
 
 

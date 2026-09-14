@@ -1,4 +1,4 @@
-"""Offline Day 11 tests. SimpleTestCase also forbids Django SQL access."""
+"""Offline 분석 대시보드 tests. SimpleTestCase also forbids Django SQL access."""
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 import json

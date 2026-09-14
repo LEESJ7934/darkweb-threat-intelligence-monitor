@@ -10,7 +10,7 @@ const code = fs.readFileSync(path.join(__dirname, "../monstache/project_document
 function project(doc, collection) {
     const box = {module: {exports: {}}};
     vm.runInNewContext(code, box, {timeout: 1000});
-    return JSON.parse(JSON.stringify(box.module.exports(doc, "day12_elk_e2e." + collection)));
+    return JSON.parse(JSON.stringify(box.module.exports(doc, "elk_e2e." + collection)));
 }
 const stamp = 1789041600000;
 
@@ -58,7 +58,7 @@ test("URI, URL credentials, token-shaped values and secret assignments are redac
     assert.ok(!JSON.stringify(out).includes("user:pass"));
     assert.ok(!JSON.stringify(out).includes("private"));
 });
-test("history changes use Day9 metadata fields and before/after only", () => {
+test("history changes use 사건 이력 관리 metadata fields and before/after only", () => {
     const doc = {document_id: "abc", changes: {data_size: {before: "10 GB", after: "15 GB", token: "private"},
         claim_token: {before: "private", after: "private"}, description: {before: null, after: "enriched"}}};
     const before = JSON.stringify(doc);
@@ -84,7 +84,7 @@ test("unsupported collection fails rather than returning false to schedule a del
     assert.throws(() => project({_id: "x"}, "alert_state"), /unsupported namespace/);
 });
 
-test("Day13 private key block and quoted assignments do not reach ES", () => {
+test("거버넌스 private key block and quoted assignments do not reach ES", () => {
     const header = "-----BEGIN " + "PRIVATE KEY-----";
     const footer = "-----END " + "PRIVATE KEY-----";
     const raw = header + "\nSYNTHETIC-KEY-BODY\n" + footer + ' token="PRIVATE WORDS" ftp://user:FTP_SECRET@host.invalid/';
@@ -95,7 +95,7 @@ test("Day13 private key block and quoted assignments do not reach ES", () => {
     assert.ok(out.description.includes("[redacted]"));
 });
 
-test("Day13 redaction preserves ordinary names and URLs", () => {
+test("거버넌스 redaction preserves ordinary names and URLs", () => {
     const doc = {company_name: "Example Company", company_url: "https://company.example/about",
         description: "password policy and token-based service"};
     assert.deepEqual(project(doc, "leaked_data"), doc);

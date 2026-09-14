@@ -84,4 +84,4 @@ def setup(config, es, kibana, *, wait=60, emit=print):
                 if error.status != 409 or find_view(kibana, wanted) is None:
                     raise
         emit("[PASS] data view " + config.index(kind))
-    emit("DAY12_ELK_SETUP: PASS")
+    emit("ELK_SETUP: PASS")

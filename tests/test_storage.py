@@ -1,4 +1,4 @@
-"""Offline stateful tests for Day 9. Never creates a real MongoClient."""
+"""Offline stateful tests for 사건 이력 관리. Never creates a real MongoClient."""
 from contextlib import ExitStack
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone

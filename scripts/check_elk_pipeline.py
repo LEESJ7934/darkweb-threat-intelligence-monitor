@@ -27,7 +27,7 @@ def main(argv=None):
         return 0
     except ElkError as error:
         print(f"[FAIL] {error.service}: {error.category}")
-        print("DAY12_ELK_PIPELINE: FAIL")
+        print("ELK_PIPELINE: FAIL")
         return 1
 
 

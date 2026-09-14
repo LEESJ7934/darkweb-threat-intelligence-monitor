@@ -1,4 +1,4 @@
-"""Day13 controls against synthetic dictionaries/fakes; no external services."""
+"""거버넌스 controls against synthetic dictionaries/fakes; no external services."""
 from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import replace
@@ -111,7 +111,7 @@ class CountDeleteCollection:
 
 
 class FakeDatabase:
-    name = "day13_governance_e2e"
+    name = "governance_e2e"
 
     def __init__(self, **rows):
         self.collections = {name: CountDeleteCollection(rows.get(name, [])) for name in policy.COLLECTIONS}
@@ -429,7 +429,7 @@ class CheckerAndCLITests(OfflineCase):
         self.assertEqual(code, 0)
         self.assertIn("expired=1", output)
         self.assertNotIn("PRIVATE", output)
-        self.assertIn("DAY13_GOVERNANCE_CHECK: PASS", output)
+        self.assertIn("GOVERNANCE_CHECK: PASS", output)
         self.assertTrue(all(method == "count" for c in db.collections.values() for method, _ in c.calls))
 
     def test_checker_detects_prohibited_field_even_with_null_or_mixed_case(self):
@@ -737,7 +737,7 @@ class ConfigurationAndELKTests(OfflineCase):
                                                         "DJANGO_SECURE_COOKIES": "False"}), [])
 
     def test_elk_check_makes_read_requests_and_never_returns_bodies(self):
-        config = ElkConfig("synthetic", "day13-test", "http://localhost:9200", "http://localhost:5601", "http://localhost:8080")
+        config = ElkConfig("synthetic", "governance-test", "http://localhost:9200", "http://localhost:5601", "http://localhost:8080")
         es = Mock()
         es.request.return_value = {"hits": {"total": {"relation": "eq", "value": 0}}, "timed_out": False, "_shards": {"failed": 0}}
         with patch.object(elk_check, "existing_mapping", return_value={}):
@@ -747,11 +747,11 @@ class ConfigurationAndELKTests(OfflineCase):
             self.assertEqual(call.args[0], "POST")
             self.assertTrue(call.args[1].endswith("/_search"))
             self.assertEqual(call.args[2]["size"], 0)
-            blocked = call.args[2]["runtime_mappings"]["day13_private_source_field"]["script"]["params"]["blocked"]
+            blocked = call.args[2]["runtime_mappings"]["governance_private_source_field"]["script"]["params"]["blocked"]
             self.assertTrue({"message", "claim_token", "resume_token"} <= set(blocked))
 
     def test_elk_prohibited_source_field_or_partial_search_fails(self):
-        config = ElkConfig("synthetic", "day13-test", "http://localhost:9200", "http://localhost:5601", "http://localhost:8080")
+        config = ElkConfig("synthetic", "governance-test", "http://localhost:9200", "http://localhost:5601", "http://localhost:8080")
         good = {"hits": {"total": {"relation": "eq", "value": 0}}, "timed_out": False, "_shards": {"failed": 0}}
         for result in ({**good, "hits": {"total": {"relation": "eq", "value": 1}}},
                        {**good, "timed_out": True}, {**good, "_shards": {"failed": 1}},

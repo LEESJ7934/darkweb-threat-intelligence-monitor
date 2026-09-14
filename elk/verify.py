@@ -38,5 +38,5 @@ def verify(config, es, kibana, monstache, database, *, wait=60, emit=print):
     for kind, (mongo_count, es_count) in counts.items():
         emit(f"[PASS] {kind} Mongo={mongo_count} / ES={es_count}")
     emit("[PASS] Kibana data views=3")
-    emit("DAY12_ELK_PIPELINE: PASS")
+    emit("ELK_PIPELINE: PASS")
     return counts

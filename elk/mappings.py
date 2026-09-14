@@ -43,7 +43,7 @@ def properties(kind):
 
 def mapping(config, kind):
     return {"dynamic": "strict",
-            "_meta": {"day12_schema": 1, "source_database": config.database,
+            "_meta": {"elk_schema": 1, "source_database": config.database,
                       "index_prefix": config.prefix},
             "properties": properties(kind)}
 

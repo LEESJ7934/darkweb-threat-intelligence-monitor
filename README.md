@@ -1,4 +1,6 @@
-# Darkweb Threat Intelligence Monitor
+# 다크웹 위협 인텔리전스 모니터
+
+**Darkweb Threat Intelligence Monitor**
 
 다크웹 유출 게시글의 **메타데이터를 수집·정규화하고, 사건 단위로 변경을 추적해 알림·분석·운영 통제까지 연결하는 위협 인텔리전스 모니터링 프로젝트**입니다.
 
@@ -44,6 +46,11 @@ flowchart LR
     O --> E
 ```
 
+### 시연 화면
+
+실제 운영 화면은 민감정보가 포함되지 않은 캡처만 `docs/images/`에 추가합니다. 현재 저장소에는 재현 가능한 Mermaid 아키텍처와 Kibana Saved Objects(`elk/kibana_dashboard.ndjson`)를 제공합니다.
+
+> GitHub 공개용 캡처를 추가할 때는 회사명·URL·토큰·DB 식별자·실제 유출정보를 마스킹합니다.
 
 ## 2. 핵심 기능
 
@@ -88,7 +95,7 @@ flowchart LR
 - 최초 direct read + change stream + resume state 사용
 - allowlist projection으로 내부/private field 제외
 - Kibana Data View 3개와 5개 패널 dashboard 제공
-- 실제 Kibana에서 export한 Saved Objects NDJSON을 `elk/darkweb_day12_dashboard.ndjson`에 보관
+- 실제 Kibana에서 export한 Saved Objects NDJSON을 `elk/kibana_dashboard.ndjson`에 보관
 
 ### Security / Privacy / GRC 운영 통제
 
@@ -141,7 +148,7 @@ scripts/       runtime/secret/governance/ELK 운영 검사
 tests/         offline regression + fixtures
 ```
 
-`webapp/`은 과거 Django 복제본으로 남아 있으나, 인증 우회 진입점이 되지 않도록 fail-closed 처리했습니다. 정식 실행 진입점은 `DjangoProject/manage.py`입니다.
+정식 Django 실행 진입점은 `DjangoProject/manage.py` 하나로 유지합니다.
 
 ## 5. 실행 환경
 
@@ -259,7 +266,7 @@ python scripts/check_runtime_config.py
 git diff --check
 ```
 
-기존 Day15 검증 기준(이번 ISMS-P 확장 전 baseline):
+기존 최종 검증 기준(이번 ISMS-P 확장 전 baseline):
 
 - root unittest: **266 PASS**
 - Django `mongoDbConnect`: **77 PASS**
