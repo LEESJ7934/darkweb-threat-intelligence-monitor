@@ -1,6 +1,6 @@
 # Project Story — Portfolio & Interview Notes
 
-이 문서는 저장소 기능을 과장하지 않고 **문제 → 판단 → 구현 → 검증 → 결과** 순서로 설명하기 위한 발표/포트폴리오용 요약입니다.
+이 문서는 저장소 기능을 과장하지 않고 **문제 → 판단 → 구현 → 검증 → 결과** 순서로 설명하기 위한 요약입니다.
 
 ## 1. 한 문장 소개
 
@@ -94,60 +94,3 @@ ISMS-P 확장 전 최종 baseline에서 확인한 대표 결과입니다. 이번
 - Kibana Data View 3개 / Dashboard 5개 패널 / Saved Objects export: PASS
 - 실제 Mongo governance read-only check / retention DRY RUN: PASS
 - 실제 Django 로그인 → 조회 → 로그아웃 → 미인증 재차단: PASS
-
-## 7. 이력서용 요약
-
-다음 문구는 구현한 범위를 넘어서는 제품/인증 수준을 주장하지 않는 버전입니다.
-
-- 다크웹 유출 메타데이터 수집 프로젝트를 사건 단위 `event_key` 기반 dedupe·변경 이력 구조로 개선하고, 동일 사건 재관찰과 material change를 구분
-- `NEW/UPDATED` 위험도 알림에 deterministic alert ID, retry/lease, 전송 이력을 적용하고 Telegram 실환경 E2E로 중복 방지와 재시작 복구 검증
-- MongoDB 데이터를 Monstache로 Elasticsearch/Kibana에 실시간 투영하고 direct-read·change-stream·resume을 실제 Docker 환경에서 검증
-- Django 인증·감사로그, metadata 최소화/redaction, retention DRY RUN, source lifecycle을 추가해 보안·개인정보/GRC 관점의 운영 통제 보완
-- ISMS-P 통제항목 기반 모의진단으로 자산·데이터 흐름·Risk Register·GAP·증적을 연결하고, Analyst/Security Admin 권한 분리와 read-only Audit Review를 추가
-
-## 8. 포트폴리오용 설명
-
-초기 프로젝트는 여러 다크웹 사이트의 유출 게시글을 수집해 MongoDB에 저장하는 구조였지만, 동일 사건의 반복 수집과 정보 변경을 구분하기 어려웠습니다. 이를 개선하기 위해 기존 parser ID는 호환성을 위해 유지하면서 `event_key`를 별도로 도입하고, 현재 상태와 field-level 변경 이력을 분리했습니다. 이후 새 사건과 중요 변경을 `NEW/UPDATED`로 구분해 Telegram으로 알리고 deterministic alert ID와 retry/lease를 적용했습니다. 분석 단계에서는 Django 조회 화면과 MongoDB→Monstache→Elasticsearch/Kibana 파이프라인을 구성했으며, 최초 동기화·실시간 변경·중단 후 resume을 실제 환경에서 검증했습니다. 마지막으로 접근통제, 감사로그, metadata 최소화, retention DRY RUN, source lifecycle을 추가해 단순 수집기를 운영형 보안 모니터링 프로젝트로 확장했습니다.
-
-## 9. 면접 60초 설명
-
-> 기존 프로젝트는 다크웹 게시글을 수집해서 MongoDB에 저장하는 데 초점이 있었습니다. 그런데 같은 사건을 반복 수집했을 때 중복인지 업데이트인지 구분하기 어렵고, 변경 이력이나 알림 근거도 남지 않는 문제가 있었습니다. 그래서 기존 ID 호환성은 유지하면서 사건 단위 event_key를 추가하고, 현재 상태와 변경 이력을 분리했습니다. 이후 NEW와 UPDATED 알림, retry와 중복 방지, Django 분석 화면, Elasticsearch/Kibana 실시간 분석까지 연결했습니다. 특히 실제 통합 과정에서 Elasticsearch mapping, Monstache BSON datetime, Kibana Data View 충돌, Django 브라우저 CSRF 문제를 발견해 수정했고, 마지막에는 접근통제·감사·보유기간·source lifecycle까지 추가했습니다. 기능을 많이 넣는 것보다 각 단계가 재시작과 실제 환경에서도 유지되는지를 검증하는 데 초점을 뒀습니다.
-
-## 10. 예상 꼬리질문 핵심 답변
-
-**Q. 왜 기존 `_id`를 바로 바꾸지 않았나요?**
-기존 DB와 fixture 호환성이 깨질 수 있어 parser ID는 그대로 두고 장기 사건 식별 책임을 `event_key`로 분리했습니다.
-
-**Q. 왜 MongoDB collection을 current/history로 나눴나요?**
-현재 상태 조회와 변경 근거 보존의 목적이 다르기 때문입니다. 현재값을 덮어쓰기만 하면 무엇이 언제 바뀌었는지 설명할 수 없습니다.
-
-**Q. 왜 모든 변경을 Telegram으로 보내지 않았나요?**
-날짜만 바뀌는 변화까지 모두 보내면 알림 피로가 생기므로 material change와 non-material change를 분리했습니다.
-
-**Q. Monstache를 왜 썼나요?**
-MongoDB의 운영 데이터를 유지하면서 Elasticsearch를 분석용 read model로 분리하고 change stream 기반 실시간 투영과 resume을 구현하기 위해 사용했습니다.
-
-**Q. Work/자동 테스트가 통과했는데 왜 PC E2E가 필요했나요?**
-실제 서비스 버전과 런타임 표현 차이는 mock에서 드러나지 않았습니다. BSON datetime과 CSRF origin 문제처럼 실제 Monstache/브라우저에서만 발견된 오류가 있었습니다.
-
-**Q. retention을 왜 자동 TTL로 바로 처리하지 않았나요?**
-삭제는 복구 비용이 크기 때문에 먼저 대상 수를 read-only로 확인하고 DRY RUN과 명시적 승인 후 삭제하도록 안전장치를 우선했습니다.
-
-**Q. UNAVAILABLE source의 crawler를 왜 삭제하지 않았나요?**
-현재 live availability와 parser 구현의 재현성은 별개라서 fixture와 parser는 보존하고 scheduler 자동 실행만 lifecycle 상태로 제어했습니다.
-
-## 11. ISMS-P 모의진단 확장
-
-기존 governance 기능을 인증 충족으로 과장하지 않고, `docs/isms_p/`에 범위·자산·데이터 흐름·GAP Matrix·Risk Register·Risk Treatment·Evidence Index를 분리했습니다. 실제 코드 GAP 중에서는 (1) Analyst와 Security Admin의 governance 권한 분리, (2) 최근 30일 감사로그 aggregate review를 구현했습니다. 이 확장은 실제 인증심사 수행이 아니라 자체 시스템을 대상으로 한 **ISMS-P 통제항목 기반 모의 보안진단 및 개선**입니다.
-
-## 12. 설명할 때 지킬 경계
-
-이 프로젝트를 설명할 때 다음 표현은 피합니다.
-
-- "실제 다크웹 전체를 실시간 탐지한다"
-- "ISMS-P/PIPA를 준수하는 시스템이다"
-- "모든 개인정보나 credential을 탐지한다"
-- "UNAVAILABLE source의 위협 조직이 활동을 종료했다"
-- "법정 보유기간에 맞춰 자동 삭제한다"
-
-대신 **프로젝트 범위에서 구현한 운영 통제, 실제로 확인한 E2E, 아직 남은 한계**를 같이 설명합니다.
