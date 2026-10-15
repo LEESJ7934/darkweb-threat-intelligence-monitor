@@ -5,7 +5,7 @@
 - Likelihood: 1(희박) ~ 5(매우 높음)
 - Impact: 1(낮음) ~ 5(매우 큼)
 - Risk Score = Likelihood × Impact
-- 1~4 LOW / 5~9 MEDIUM / 10~15 HIGH / 16~25 CRITICAL
+- 1 - 4 LOW / 5 - 9 MEDIUM / 10 - 15 HIGH / 16 - 25 CRITICAL
 
 이는 프로젝트용 단순 방법론이며 실제 조직의 위험수용 기준을 대신하지 않습니다.
 
