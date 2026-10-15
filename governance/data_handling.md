@@ -83,9 +83,10 @@ Telegram에 과거 이미 전송된 메시지의 회수나 삭제는 거버넌�
 목록과 상세의 POST 등 쓰기 메서드는 계속 거부하며 응답은 no-store로 표시합니다.
 
 Django 기본 LoginView/LogoutView, 세션, CSRF를 사용합니다. 로그아웃은 CSRF가 필요한 POST입니다.
-등록 기능·새 인증 시스템·새 역할 체계는 추가하지 않습니다. 기본적으로 유효한 Django 계정은
-동일한 분석 화면을 읽을 수 있으므로 계정 발급 자체를 운영자가 관리해야 합니다.
-세부 RBAC, MFA, 로그인 시도 제한, 외부 SSO는 이번 구현에 포함하지 않습니다.
+등록 기능·새 인증 시스템·새 역할 체계는 추가하지 않습니다. 유효한 Django 계정은 분석 화면을 조회할 수 있으며, `is_staff=True`인 Security Admin에게만
+`/governance/audit-review/` 조회를 허용하는 최소 역할 분리를 적용했습니다.
+계정 발급·해지 및 관리자 권한 지정은 별도 운영 관리가 필요합니다.
+MFA, 로그인 시도 제한, 외부 SSO, 정기 접근권한 검토는 구현하지 않았습니다.
 
 오래된 `webapp` 복제본은 공개 조회 경로가 별도로 남아 있어 settings 초기화에서
 명확한 안내와 함께 실행을 거부합니다. 이 경로를 운영하지 마세요. 정식 대시보드 query/parser/UI는 유지됩니다.
@@ -97,7 +98,7 @@ Django 기본 LoginView/LogoutView, 세션, CSRF를 사용합니다. 로그아�
 기본 HTTP 개발 환경에서는 `DJANGO_SECURE_COOKIES=False`입니다. 실제 브라우저 접속이
 HTTPS인 환경에서는 True로 설정해 session/CSRF cookie의 Secure 속성을 활성화합니다.
 HTTPOnly session cookie, nosniff, DENY frame, same-origin referrer 헤더는 명시적으로 적용합니다.
-기존 HTML의 no-referrer 메타 태그는 더 제한적인 페이지 정책으로 유지합니다.
+실제 Django 공통 템플릿의 referrer 메타 정책은 `same-origin`이며, 프로젝트의 `SECURE_REFERRER_POLICY` 설정과 일치합니다. 과거 `no-referrer` 사용으로 발생한 로그인 문제와 수정·재검증 내역은 [validation.md](../docs/validation.md)에 기록했습니다.
 
 이 설정만으로 HTTPS 서버가 생기지는 않습니다. 운영자는 신뢰할 프록시와 TLS 종료 위치,
 HTTPS redirect·Secure cookie 동작을 확인한 후에 HSTS를 단계적으로 적용해야 합니다.
@@ -183,11 +184,11 @@ alert_log message/claim_token 예외는 내부 전달 호환에만 적용합니�
 최상위 키만 서버에서 검사해 count를 받습니다. 문서 body는 반환하지 않습니다.
 읽기 검색(POST /_search)이며 mapping/index를 변경하지 않습니다.
 실제 ES가 꺼졌거나 검색/스크립트 권한·시간 제한이 맞지 않으면 명확한 FAIL을 반환합니다.
-Work의 fake 테스트는 실제 Mongo 표현식/ES Painless 실행을 대체하지 않습니다.
+모의 객체를 이용한 단위 테스트는 실제 MongoDB 표현식이나 Elasticsearch 런타임 동작 검증을 대체하지 않습니다.
 
 테스트에는 Example Company, 예약 도메인, 합성 시각·토큰 형태만 사용합니다.
 실제 피해자 개인정보·유출 원문·실제 자격증명을 fixture/로그/보고서에 넣지 않습니다.
-Work는 실제 Atlas/Telegram/Tor/ELK/Docker를 실행하지 않습니다.
+실제 Atlas·Telegram·Tor·ELK·Docker 통합 동작은 해당 환경에서 별도로 검증해야 합니다. 기존 통합 검증 결과와 범위는 [validation.md](../docs/validation.md)에 구분해 기록했습니다.
 사용자 PC에서는 먼저 읽기 점검만 실행하고, 삭제 동작 실습은 합성 DB에서만 선택적으로 수행합니다.
 
 ## 구현에 사용한 공식 문서

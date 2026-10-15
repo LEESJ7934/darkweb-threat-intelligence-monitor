@@ -2,6 +2,8 @@
 
 구현·증거·한계를 연결한 프로젝트용 설계 예제입니다.
 ISMS-P 인증 충족표, PIPA 준수 판정 또는 실제 인증심사 대응 완성 문서가 아닙니다.
+
+> **문서 역할 구분:** 이 표는 구현한 운영 통제·코드·한계의 연결표입니다. ISMS-P 21개 항목별 판정과 GAP, 위험·증적 재평가는 [ISMS-P 모의진단](../docs/isms_p/03_control_gap_matrix.md)에서 따로 다룹니다.
 Evidence는 코드와 테스트의 위치를 의미하며 실제 운영 통제의 지속적 수행까지 입증하지 않습니다.
 
 | Control | Risk | Implementation | Evidence | Limitation |
@@ -19,4 +21,4 @@ Evidence는 코드와 테스트의 위치를 의미하며 실제 운영 통제�
 | ELK field minimization | snapshot·토큰이 분석 표면으로 복사 | 기존 strict mapping/projection, 추가 key redaction, 선택적 _source 키 검사 | [project_document.js](../monstache/project_document.js), [mappings.py](../elk/mappings.py), [elk_check.py](elk_check.py), [JS 테스트](../tests/test_elk_projection.js) | 실제 ES runtime query·전파는 PC 검증 필요; arbitrary nested PII 탐지 아님 |
 | Backup/destructive protection | 복구 불능·resume 상태 손상 | 기존 토큰·볼륨 유지, drop/ES DELETE/자동 cascade 없음, 실행 전 범위·백업 검토 절차 | [retention.py](retention.py), [ELK 통합 운영 절차](../elk/operations.md), [data_handling.md](data_handling.md) | 자동 백업/복원 검증을 추가하지 않음; export/Telegram 과거 메시지 삭제 안 함 |
 | Incident response | 미확인 게시물을 사실로 단정·과도한 대응 | 메타데이터만으로 탐지~사후 검토 9단계, 담당자 판단과 최소 공유 | [incident_response.md](incident_response.md) | 조직별 연락망·신고 의무·법적 판단을 대신하지 않음 |
-| Testing | 보안 통제 우회·기존 기능 회귀 | fake Mongo, 인증용 in-memory SQLite, 신규/기존 Python·JS 테스트 | [test_governance.py](../tests/test_governance.py), [Django 테스트](../DjangoProject/mongoDbConnect/tests_governance.py), [기존 ELK 테스트](../tests/test_elk.py) | Atlas/Tor/Telegram/ELK/Docker 실제 E2E는 Work에서 수행하지 않음 |
+| Testing | 보안 통제 우회·기존 기능 회귀 | fake Mongo, 인증용 in-memory SQLite, 신규/기존 Python·JS 테스트 | [test_governance.py](../tests/test_governance.py), [Django 테스트](../DjangoProject/mongoDbConnect/tests_governance.py), [기존 ELK 테스트](../tests/test_elk.py) | 단위·모의 테스트만으로 실제 서비스 통합 동작을 보장하지 않음. 로컬 통합 검증 기록은 [validation.md](../docs/validation.md) 참조 |

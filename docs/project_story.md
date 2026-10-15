@@ -1,96 +1,54 @@
-# Project Story — Portfolio & Interview Notes
+# 프로젝트 설명 — ISMS-P 컨설턴트 포트폴리오·면접용
 
-이 문서는 저장소 기능을 과장하지 않고 **문제 → 판단 → 구현 → 검증 → 결과** 순서로 설명하기 위한 요약입니다.
+이 문서는 **프로젝트에서 무엇을 문제로 보았고, 어떤 근거로 점검하고 개선했는지**를 설명합니다. 기술별 구현 상세는 [architecture.md](architecture.md), 실행·테스트 절차는 [validation.md](validation.md), ISMS-P 모의진단 원본은 [isms_p/](isms_p/00_scope.md)를 참고합니다.
 
 ## 1. 한 문장 소개
 
-여러 다크웹 유출 게시글을 단순 저장하던 초기 프로젝트를, **사건 단위 identity·변경 이력·알림·분석·운영 통제까지 연결하는 위협 인텔리전스 모니터링 파이프라인**으로 개선했습니다.
+다크웹 유출 게시글의 메타데이터를 수집하고 사건별 변경을 추적해 알림·조회·분석으로 연결한 시스템을 대상으로, 운영 통제를 보완하고 **ISMS-P 관련 21개 통제항목 기반 자체 모의진단**을 수행했습니다.
 
-## 2. 처음 상태에서 확인한 문제
+## 2. 개발 이후 왜 모의진단을 했는가
 
-초기 구조는 source별 crawler가 HTML을 읽어 MongoDB에 저장하고 Django에서 결과를 조회하는 데 초점이 있었습니다. 실제 운영 관점에서는 다음 문제가 남았습니다.
+기존 프로젝트는 Selenium/Tor 수집, MongoDB 저장, Django 조회와 알림 기능을 중심으로 구현됐습니다. 이후 반복 수집 시 중복 식별, 변경 근거 보존, 외부 분석 표면의 필드 노출을 개선했습니다.
 
-- 같은 사건을 다시 수집했을 때 중복과 재관찰을 구분하기 어려움
-- 피해 규모나 설명이 바뀌어도 현재 상태만 남아 변경 근거가 사라짐
-- 새 사건과 단순 날짜 변경을 같은 수준으로 알릴 수 있어 알림 피로가 생김
-- crawler availability와 parser correctness가 한 덩어리로 취급됨
-- Mongo 내부 delivery/private field까지 분석 표면에 노출될 위험이 있음
-- 대시보드 접근통제, 보유기간, 감사, source lifecycle 같은 운영 통제가 부족함
+하지만 기능이 동작한다는 사실만으로 **계정·권한을 적절히 관리하는지, 감사로그를 검토하는지, 오래된 데이터를 안전하게 처리하는지**까지 판단할 수는 없습니다. 따라서 점검 가능한 시스템 범위를 정하고 보안 통제와 증적을 연결했습니다.
 
-## 3. 개선 흐름
+## 3. 자체진단의 순서
 
-```text
-Crawler refactor
-→ stable event identity / dedupe / history
-→ NEW / UPDATED alert + retry / dedupe
-→ analyst dashboard
-→ MongoDB → Monstache → Elasticsearch / Kibana
-→ access / retention / audit / source lifecycle governance
-```
+| 단계 | 작업 | 산출물 |
+|---|---|---|
+| Scope | 진단 대상·제외 범위 정의 | [00_scope.md](isms_p/00_scope.md) |
+| Asset | 저장소·대시보드·인증정보 등 15개 자산 식별 | [01_asset_inventory.md](isms_p/01_asset_inventory.md) |
+| Data Flow | 다크웹→수집→DB→알림·조회·ELK, 신뢰 경계 확인 | [02_data_flow.md](isms_p/02_data_flow.md) |
+| GAP | 시스템 관련 ISMS-P 통제 21개와 구현 상태 비교 | [03_control_gap_matrix.md](isms_p/03_control_gap_matrix.md) |
+| Risk | 시스템 운영 위험 12개, 가능성×영향도 평가 | [04_risk_register.md](isms_p/04_risk_register.md) |
+| Treatment | 개선대책·담당 역할 가정·잔여위험 | [05_risk_treatment_plan.md](isms_p/05_risk_treatment_plan.md) |
+| Evidence | 코드·설정·테스트와 판단 한계 연결 | [06_evidence_index.md](isms_p/06_evidence_index.md) |
+| Final | 개선 후 재평가와 미완료 과제 기록 | [07_final_assessment.md](isms_p/07_final_assessment.md) |
 
-각 단계는 앞 단계의 schema와 동작을 최대한 보존하고, 새 기능 때문에 기존 기능이 깨지지 않는지 regression을 반복 확인했습니다.
+## 4. 면접에서 설명하기 좋은 두 사례
 
-## 4. 주요 설계 판단
+**① 접근권한 분리 — R-01 / 2.5.1·2.5.5**
 
-### 기존 `_id`를 버리지 않고 `event_key`를 추가
+- 발견: 로그인 기능은 있었지만 일반 사용자와 관리자 사이에 거버넌스 기능 권한 구분이 부족했습니다.
+- 개선: Analyst는 조회, `is_staff=True` Security Admin만 Audit Review를 확인하도록 분리했습니다.
+- 한계: MFA와 계정·권한의 정기 검토는 미구현이므로 **PARTIAL**로 유지했습니다.
 
-기존 parser `_id`는 이미 저장된 문서와 fixture의 호환성에 사용되고 있었습니다. 이를 즉시 교체하지 않고 장기 사건 식별용 `event_key`를 별도로 두어 **레거시 호환성과 안정적인 사건 추적을 분리**했습니다.
+**② 감사로그 점검 — R-04 / 2.9.5**
 
-### 현재 상태와 변경 이력을 분리
+- 발견: 로그를 기록하더라도 정기 검토 기준·도구가 부족했습니다.
+- 개선: 최근 30일 `audit.jsonl`을 읽기 전용으로 집계하고 로그인 실패·접근거부·오류 등의 기준 초과 시 주의 상태를 표시하는 기능을 추가했습니다.
+- 한계: 실제 조직의 월간 승인 기록·자동 SIEM 연계까지는 구현하지 않았으므로 **PARTIAL**로 유지했습니다.
 
-`leaked_data`에는 현재 상태를, `leak_history`에는 field-level before/after를 기록했습니다. 동일 변경 재처리 시 history가 중복되지 않도록 deterministic ID를 사용했습니다.
+## 5. 구현·검증·운영의 구분
 
-### 모든 변경을 알리지 않음
+- **구현:** 코드와 설정이 존재하는 상태
+- **검증:** 테스트·실행 결과로 특정 동작을 확인한 상태
+- **운영 통제:** 역할·주기·책임·검토 기록을 포함하여 지속적으로 관리하는 상태
 
-`NEW`와 `UPDATED`를 구분하고, 날짜만 변하는 등 비본질적 변경은 `SUPPRESSED`할 수 있게 했습니다. 알림에는 deterministic identity, lease, retry/attempt count를 두어 재시작 후 중복 전송을 줄였습니다.
+이 세 가지를 혼동하지 않습니다. 과거 테스트 수치는 이 문서에 중복 기재하지 않고 [검증 기록](validation.md)을 기준으로 확인합니다. 실제 조직의 인증심사나 법적 적정성 판정 경험으로 소개하지 않습니다.
 
-### MongoDB와 분석 표면을 분리
+## 6. 면접용 짧은 설명
 
-MongoDB 운영에 필요한 내부 상태를 Django/Elasticsearch에 전부 노출하지 않았습니다. Monstache projection에서 allowlist를 사용하고 `message`, `claim_token`, `resume_token` 같은 alert 내부 필드는 Elasticsearch에서 제외했습니다.
+> 다크웹 유출 게시글에서 필요한 메타데이터를 수집하고 동일 사건의 중복과 내용 변경을 구분해 알림·조회·분석으로 연결한 프로젝트입니다. 이후 접근통제·감사·보유기간 등의 운영 통제를 보완했고, ISMS-P 관련 21개 통제항목을 선별해 프로젝트 자체 모의진단을 진행했습니다. 자산과 데이터 흐름을 정리하고 GAP을 위험평가와 개선계획, 코드·테스트 증적으로 연결했습니다. 특히 관리자 권한 분리와 감사로그 검토 기능을 개선했으며, 정기 운영 절차 등 남은 한계는 별도로 기록했습니다.
 
-### 접근 불가 source를 삭제하지 않고 lifecycle로 관리
-
-parser와 fixture는 재현 자료로 남기되 scheduler는 `ACTIVE` source만 실행합니다. 현재 Bitlock만 ACTIVE이며 다른 source는 UNAVAILABLE 상태로 자동 실행에서 제외합니다. 이 상태는 위협 행위자의 실제 활동 여부를 의미하지 않습니다.
-
-### retention은 자동 삭제보다 안전장치를 우선
-
-운영 DB에 destructive test를 하지 않고 read-only checker와 DRY RUN을 기본으로 했습니다. 실제 삭제에는 `--apply`와 DB 이름 이중 확인이 필요하고, invalid/missing/future timestamp는 자동 삭제하지 않습니다.
-
-## 5. 실제 통합 과정에서 발견한 문제
-
-자동 테스트가 통과한 뒤에도 실제 환경에서 다음 문제를 발견했습니다.
-
-### Elasticsearch date mapping 표현 차이
-
-Elasticsearch 8.15.3이 기본 date format을 mapping 응답에서 생략해 strict comparator가 충돌로 오판했습니다. 생략 가능한 기본값만 호환 처리하고 나머지 mapping 검사는 유지했습니다.
-
-### Monstache BSON datetime 호환
-
-실제 Monstache/Otto 런타임에서 BSON datetime이 JavaScript native `Date`와 다른 Go-backed 형태로 전달돼 timestamp가 사라졌습니다. 여러 time 표현을 안전하게 ISO 문자열로 변환하도록 보완했습니다.
-
-### Kibana Data View 이름 충돌
-
-여러 테스트 index prefix가 공존할 때 같은 Data View display name이 충돌했습니다. prefix를 display name에 포함해 테스트 환경을 분리했습니다.
-
-### 실제 브라우저 CSRF origin 오류
-
-Django unit test는 통과했지만 실제 로그인 POST에서 template의 `no-referrer` 정책 때문에 Origin 검사가 실패했습니다. project 설정과 일치하도록 `same-origin`으로 수정하고 regression assertion을 추가한 뒤 로그인/로그아웃을 다시 검증했습니다.
-
-이 경험 때문에 **mock/unit test 통과와 실제 서비스 통합 성공을 분리해서 판단**했습니다.
-
-## 6. 검증 결과
-
-ISMS-P 확장 전 최종 baseline에서 확인한 대표 결과입니다. 이번 확장 후 최종 PASS 수는 로컬 `.venv`에서 재검증한 뒤 갱신합니다.
-
-- root unittest: 266 PASS
-- Django `mongoDbConnect`: 77 PASS
-- governance 전용 unittest: 72 PASS
-- Django system check: 0 issues
-- Node projection reference test: 14 PASS (Node 사용 가능 환경)
-- secret/runtime/diff 검사: PASS
-- MongoDB → Monstache → Elasticsearch initial sync: PASS
-- 실행 중 change stream 반영: PASS
-- Monstache 중단 중 변경 후 resume: PASS
-- Kibana Data View 3개 / Dashboard 5개 패널 / Saved Objects export: PASS
-- 실제 Mongo governance read-only check / retention DRY RUN: PASS
-- 실제 Django 로그인 → 조회 → 로그아웃 → 미인증 재차단: PASS
+공동 프로젝트의 기존 구현과 프로젝트 종료 후 개인적으로 수행한 운영 통제 보완·자체진단은 실제 기여 범위에 맞춰 구분해 설명합니다.

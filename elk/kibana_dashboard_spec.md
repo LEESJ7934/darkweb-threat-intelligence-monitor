@@ -1,6 +1,6 @@
 # ELK 통합 Kibana Dashboard 명세
 
-대상 버전은 Kibana 8.15.3입니다. Work에서는 Saved Object 내부 JSON을 만들지 않습니다.
+대상 버전은 Kibana 8.15.3입니다. Saved Objects 내부 JSON을 임의로 작성하기보다 실제 Kibana UI에서 Export한 결과물을 증적으로 사용합니다.
 PC에서 아래 패널을 구성하고 실제 Kibana가 내보낸 NDJSON을 최종 결과물로 사용합니다.
 
 ## Data views
@@ -53,4 +53,4 @@ Stack Management → Saved Objects에서 방금 만든 대시보드만 선택하
 Export는 검색 결과 CSV와 다릅니다.
 이 절차와 관련 객체 포함 방식은 [Elastic Saved objects 문서](https://www.elastic.co/docs/explore-analyze/find-and-organize/saved-objects#import-and-export)에 근거합니다.
 
-Work 결과물에는 임의로 만든 NDJSON이 없습니다. PC export 후 생성된 파일이 최종 대시보드 결과물입니다.
+저장소의 `kibana_dashboard.ndjson`은 실제 Kibana에서 Export한 파일을 기준으로 관리합니다. 문서의 절차만으로 현재 환경의 생성·복원 성공을 보장하지 않으므로 실제 파일과 검증 기록을 확인합니다.

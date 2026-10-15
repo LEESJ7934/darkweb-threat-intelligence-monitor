@@ -1,322 +1,105 @@
-﻿# 다크웹 위협 인텔리전스 모니터
-
+# 다크웹 위협 인텔리전스 모니터
 **Darkweb Threat Intelligence Monitor**
 
-다크웹 유출 게시글의 **메타데이터를 수집·정규화하고, 사건 단위로 변경을 추적해 알림·분석·운영 통제까지 연결하는 위협 인텔리전스 모니터링 프로젝트**입니다.
+다크웹 유출 게시글의 **필요한 메타데이터만 수집**하고, 동일 사건의 재관찰과 내용 변경을 구분해 **알림·조회·분석·운영 보안 통제**로 연결한 프로젝트입니다. 게시글의 유출 주장은 검증된 침해 사실과 구분하며, 유출 원문 파일이나 계정·비밀번호를 수집·재사용하지 않습니다.
 
-이 프로젝트는 실제 유출 원문 파일을 내려받거나 계정·비밀번호를 재사용하는 방식이 아니라, 공개된 게시글에서 필요한 메타데이터만 수집해 **탐지 → 중복 제거/변경 추적 → 위험도 분류 → 알림 → 분석 → 보유·접근 통제** 흐름을 재현하는 데 초점을 둡니다.
+> **진단 범위 안내:** 이 저장소의 ISMS-P 관련 자료는 교육·포트폴리오 목적의 **프로젝트 자체 모의진단**입니다. 실제 ISMS-P 인증심사, 조직 전체 적합성 평가 또는 개인정보보호법 준수 판정을 의미하지 않습니다.
 
-> 이 저장소의 governance 기능은 프로젝트 운영 통제 예제입니다. 
+## 1. 프로젝트 개요
 
-## 1. 프로젝트에서 해결한 문제
+초기 수집·저장·조회 중심 구조에서 다음 과제를 식별했습니다.
 
-초기 버전은 여러 크롤러가 각자 HTML을 읽어 MongoDB에 저장하고, Django 화면에서 결과를 보여주는 구조였습니다. 개선 과정에서는 단순 수집보다 다음 문제가 더 중요하다고 판단했습니다.
+- 같은 게시글이 다시 수집될 때 **중복과 재관찰**을 구분하기 어려움
+- 게시글 내용이 바뀌면 **변경 전후 근거**를 추적하기 어려움
+- 중요하지 않은 변경까지 알림으로 보내 **알림 피로**가 발생할 수 있음
+- 데이터 조회·외부전송 과정에서 **불필요한 정보 노출** 가능성
+- 접근권한·감사로그·보유기간 등 **운영 보안 통제**의 부족
 
-- 같은 사건을 반복 수집했을 때 중복 문서가 쌓이는 문제
-- 피해 규모·설명 등이 바뀌어도 변경 이력을 남기기 어려운 문제
-- 새 사건과 중요 변경을 구분하지 못해 알림 피로가 생기는 문제
-- MongoDB 데이터를 분석 화면과 Elasticsearch/Kibana에 안전하게 노출하는 문제
-- 더 이상 접근할 수 없는 소스를 scheduler가 계속 실행하는 문제
-- 대시보드 접근, 보유기간, 감사로그 같은 운영 통제가 없는 문제
+공동 프로젝트의 수집·저장·조회·알림 기반을 개선하고, 이후 프로젝트 범위에서 운영 통제 및 ISMS-P 자체진단 산출물을 보완했습니다. 세부 수행 이력은 [프로젝트 설명](docs/project_story.md)에 정리했습니다.
 
-현재는 이 문제를 아래 파이프라인으로 분리해 처리합니다.
-
-```mermaid
-flowchart LR
-    A[Darkweb source] --> B[Selenium crawler]
-    B --> C[Pure HTML parser]
-    C --> D[Metadata allowlist / redaction]
-    D --> E[(MongoDB leaked_data)]
-    E --> F[Stable event identity / dedupe]
-    F --> G[(leak_history)]
-    E --> H[Risk classification]
-    G --> H
-    H --> I[(alert_log)]
-    I --> J[Telegram]
-    E --> K[Django analyst dashboard]
-    G --> K
-    I --> K
-    E --> L[Monstache]
-    G --> L
-    I --> L
-    L --> M[(Elasticsearch)]
-    M --> N[Kibana]
-    O[Governance controls] --> D
-    O --> K
-    O --> E
-```
-
-## 2. 핵심 기능
-
-### 수집과 파싱
-
-- Selenium + Tor proxy 기반 렌더링 수집
-- 크롤링, 순수 HTML 파싱, MongoDB 저장을 분리
-- fixture 기반 offline parser 테스트
-- raw HTML과 유출 원문 파일은 저장하지 않음
-- source lifecycle registry에서 `ACTIVE` 상태만 scheduler 실행
-- 현재 자동 스케줄 대상은 Bitlock 1개이며, Gunra / Black Shrantac / DragonForce parser와 fixture는 재현용으로 보존
-
-### 사건 식별과 변경 이력
-
-- 기존 parser `_id`는 호환성을 위해 유지
-- `source + company_url`, 대체로 `source + company_name`, 마지막으로 legacy `_id`를 사용한 deterministic `event_key`
-- 메타데이터 fingerprint로 동일 관찰과 변경 관찰을 구분
-- `first_seen`, `last_seen`, `observation_count` 관리
-- 변경 시 `leak_history`에 필드별 before/after 이력 저장
-- 재시도 시 같은 변경이 중복 기록되지 않도록 deterministic history ID 사용
-
-### 알림
-
-- `NEW` / `UPDATED` 사건을 구분
-- 중요도와 유출 내용에 따라 INFO~CRITICAL 위험도 분류
-- 날짜만 바뀌는 등 비본질적 변경은 알림 억제 가능
-- alert ID 기반 중복 방지
-- lease / retry / attempt count로 전송 재시도와 재시작 복구 지원
-- Telegram 전송 결과를 `alert_log`로 추적
-
-### 분석 화면
-
-- Django 기반 조회 전용 analyst dashboard
-- 인증이 필요한 목록/검색/필터/상세 화면
-- 위험도, source, 최근 사건, 변경 이력, 알림 상태 확인
-- 로그인/로그아웃과 접근 감사 이벤트 기록
-- DB URI, token, claim token, 원문 exception 같은 내부 값은 화면에 노출하지 않음
-
-### Elasticsearch / Kibana
-
-- Monstache를 이용해 `leaked_data`, `leak_history`, `alert_log`를 각각 별도 index로 투영
-- 최초 direct read + change stream + resume state 사용
-- allowlist projection으로 내부/private field 제외
-- Kibana Data View 3개와 5개 패널 dashboard 제공
-- 실제 Kibana에서 export한 Saved Objects NDJSON을 `elk/kibana_dashboard.ndjson`에 보관
-
-### Security / Privacy / GRC 운영 통제
-
-- 수집 필드 allowlist와 길이 제한
-- credential/token/URL embedded credential 등 보수적 redaction
-- Django 분석 화면 인증 기본 활성화
-- 구조화된 로컬 audit log + rotation
-- retention 기본값과 read-only 점검
-- 실제 삭제는 기본 DRY RUN이며 `--apply` + DB 이름 이중 확인 필요
-- source lifecycle (`ACTIVE`, `PAUSED`, `UNAVAILABLE`, `RETIRED`)
-- metadata 기반 incident response playbook과 control matrix
-
-관련 문서:
-
-- [`governance/data_handling.md`](governance/data_handling.md)
-- [`governance/incident_response.md`](governance/incident_response.md)
-- [`governance/control_matrix.md`](governance/control_matrix.md)
-- [`docs/isms_p/00_scope.md`](docs/isms_p/00_scope.md) ~ [`07_final_assessment.md`](docs/isms_p/07_final_assessment.md): ISMS-P 통제항목 기반 모의진단 산출물
-
-## 3. 데이터 흐름
-
-MongoDB의 핵심 collection은 다음과 같습니다.
-
-| Collection | 역할 |
-| --- | --- |
-| `leaked_data` | 사건의 현재 상태 |
-| `leak_history` | 메타데이터 변경 이력 |
-| `alert_log` | NEW/UPDATED 알림의 상태·전송 이력 |
-| `alert_state` | 내부 alert processing state; retention 대상 아님 |
-
-Elasticsearch는 분석 표면을 별도로 둡니다.
-
-| Index suffix | Mongo source | 시간 필드 |
-| --- | --- | --- |
-| `-events` | `leaked_data` | `last_seen` |
-| `-history` | `leak_history` | `changed_at` |
-| `-alerts` | `alert_log` | `created_at` |
-
-## 4. 디렉터리 구조
+## 2. 전체 데이터 흐름
 
 ```text
-crawling/      crawler, parser, event identity/storage
-scheduler/     ACTIVE source 주기 실행
-alert/         risk policy, Telegram delivery, retry/dedupe
-DjangoProject/ 정식 analyst dashboard
-elk/           index mapping, setup, verification, E2E helpers
-monstache/     MongoDB → Elasticsearch projection
-governance/   access/data handling/retention/audit/source lifecycle
-scripts/       runtime/secret/governance/ELK 운영 검사
-tests/         offline regression + fixtures
+다크웹 게시글
+  → Selenium / Tor 수집
+  → Parser / Normalizer 및 메타데이터 최소화
+  → MongoDB 저장 (현재 상태 / 변경 이력)
+  → 사건 식별·변경 감지 및 위험도 분류
+  → Telegram 알림
+  → Django 조회 / Elasticsearch·Kibana 분석
+  → 접근통제·감사·보유기간 등 운영 통제
 ```
 
-정식 Django 실행 진입점은 `DjangoProject/manage.py` 하나로 유지합니다.
+운영 통제는 마지막에 한 번만 실행되는 단계가 아니라 **수집·저장·조회·알림 전반에 적용**됩니다. 정확한 처리 경로와 신뢰 경계는 [데이터 흐름 분석](docs/isms_p/02_data_flow.md) 및 [기술 설계](docs/architecture.md)를 참고하세요.
 
-## 5. 실행 환경
+## 3. 핵심 기능과 정보보호 관점
 
-검증에 사용한 주요 구성은 다음과 같습니다.
+| 영역 | 주요 구현·설계 | 정보보호 관점 |
+|---|---|---|
+| 수집·정규화 | Selenium/Tor, 필드 allowlist, redaction | 불필요한 수집·민감정보 노출 제한 |
+| 사건 식별 | `event_key`, `content_fingerprint`, `leak_history` | 중복 식별, 변경 이력 및 추적 근거 |
+| 알림 | NEW/UPDATED 구분, 위험도 분류, Telegram | 주요 이벤트 선별, 전송 상태 확인 |
+| 조회 | Django 로그인, Analyst/Security Admin 역할 분리 | 비인가 접근 및 관리자 권한 제한 |
+| 분석 | MongoDB → Monstache → Elasticsearch/Kibana | 분석용 필드 최소화, 조회 범위 관리 |
+| 운영 | 감사로그·30일 검토 도구, retention DRY RUN | 로그 점검, 보유기간 및 안전한 삭제 검토 |
 
-- Python 3.12
-- Django 5.2
-- MongoDB Atlas 또는 호환 MongoDB
-- Chrome + Selenium
-- Tor SOCKS proxy (live crawler 실행 시)
-- Docker Desktop
-- Elasticsearch 8.15.3
-- Kibana 8.15.3
-- Monstache 6.7.7
-- Telegram Bot API
+- `leaked_data`: 사건 현재 상태 / `leak_history`: 변경 이력 / `alert_log`: 알림·전송 상태
+- 현재 자동 스케줄 대상은 **Bitlock 1개**입니다. 나머지 source parser는 오프라인 재현·테스트용으로 보관하며, 실제 위협 조직의 활동 종료를 뜻하지 않습니다.
+- 프로젝트의 위험도 분류는 **수집 게시글의 우선 검토 수준**을 의미하며 실제 침해나 피해를 확정하지 않습니다.
+- 상세 설계·트레이드오프는 [architecture.md](docs/architecture.md), 기능별 통제·증거·한계는 [control_matrix.md](governance/control_matrix.md)에 있습니다.
 
-설치:
+## 4. ISMS-P 통제항목 기반 자체 모의진단
+
+시스템 구현 이후, **Scope → Asset → Data Flow → GAP → Risk → Treatment → Evidence → Final Assessment** 순서로 자체진단을 정리했습니다.
+
+- **진단 범위:** 프로젝트에서 코드·설정·테스트 등으로 확인 가능한 **21개 관련 통제항목** 선별. 조직의 인사·물리보안 등은 제외
+- **위험평가:** 별도 정보보호 위험 시나리오 **12개**를 등록하고 발생 가능성×영향도로 우선순위 평가
+- **대표 GAP ① 접근권한:** 일반 Analyst와 Security Admin의 governance 기능 권한 구분 부족 → 최소 역할 분리
+- **대표 GAP ② 로그 점검:** 감사로그는 존재하지만 정기 검토 기준·도구 부족 → 최근 30일 집계형 Audit Review 추가
+- **재평가:** 개선 기능이 있더라도 MFA·정기 권한 검토·조직 승인 기록 등 미구현 요소가 있어 관련 항목을 **PARTIAL**로 유지
+- **증적 관리:** 코드·설정·테스트 결과를 통제항목에 연결하고, **증명할 수 없는 영역**도 명시
+
+> 21개 통제항목의 점검은 **인증 적합 판정이 아닙니다**. 구현 상태, 테스트 통과, 지속적 운영 효과는 각각 구분합니다.
+
+| 순서 | 산출물 | 핵심 내용 |
+|---|---|---|
+| 00 | [Scope](docs/isms_p/00_scope.md) | 진단 대상과 제외 범위 |
+| 01 | [Asset Inventory](docs/isms_p/01_asset_inventory.md) | 15개 정보자산·중요도 |
+| 02 | [Data Flow](docs/isms_p/02_data_flow.md) | 데이터 이동·신뢰 경계 |
+| 03 | [GAP Matrix](docs/isms_p/03_control_gap_matrix.md) | 관련 21개 통제의 현재 상태·GAP |
+| 04 | [Risk Register](docs/isms_p/04_risk_register.md) | 12개 시스템 운영 위험 |
+| 05 | [Treatment Plan](docs/isms_p/05_risk_treatment_plan.md) | 위험 처리·잔여위험 |
+| 06 | [Evidence Index](docs/isms_p/06_evidence_index.md) | 근거자료와 증명 한계 |
+| 07 | [Final Assessment](docs/isms_p/07_final_assessment.md) | 개선 후 재평가·남은 GAP |
+
+## 5. 검증과 한계
+
+기존 프로젝트 문서에 기록된 검증 결과에는 **Django 테스트 81 PASS**, 설정·비밀정보 검사 PASS, MongoDB→ELK 동기화와 Django 로그인 흐름의 E2E PASS가 포함됩니다. 이 표기는 **기존 검증 기록**이며 이 문서 정리 과정에서 새로 실행한 결과는 아닙니다. 이전 Django 77 PASS 기록과의 시점 구분은 [검증 문서](docs/validation.md)에 명시했습니다.
+
+중요한 한계:
+- 모든 소스의 실시간 가용성, 향후 selector 동작, 완전한 개인정보·비밀정보 탐지를 보장하지 않습니다.
+- MongoDB/ELK 정기 백업·복원 시험, 중앙 감사로그 무결성, MFA·정기 권한 검토, 조직 차원의 사고대응 훈련은 보완 과제입니다.
+- 보유기간 기본값(`leaked_data`·`leak_history` 각 365일, `alert_log` 180일)은 **프로젝트 설정값**이며 법정 보유기간이 아닙니다.
+- 프로젝트는 유출 원문 다운로드·자격증명 재사용·피해 시스템 접근·CAPTCHA 우회를 수행하지 않습니다.
+
+## 6. 실행·기술 참고
+
+주요 구성: Python 3.12, Django 5.2, MongoDB, Selenium, Tor SOCKS proxy, Docker Desktop, Elasticsearch 8.15.3, Kibana 8.15.3, Monstache 6.7.7, Telegram Bot API.
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 Copy-Item .env.example .env
-```
-
-`.env`에는 실제 credential을 직접 채우되 Git에 커밋하지 않습니다. 최소 설정 예시는 `.env.example`을 기준으로 합니다.
-
-## 6. 기본 실행 순서
-
-### 6.1 설정 검사
-
-```powershell
 python scripts/check_secrets.py
 python scripts/check_runtime_config.py
 ```
 
-### 6.2 단일 crawler 또는 scheduler
+실제 인증정보는 `.env`에만 저장하고 Git에 커밋하지 않습니다. 정식 Django 진입점은 `DjangoProject/manage.py`입니다.
 
-Tor가 로컬에서 준비된 뒤 현재 ACTIVE source를 직접 실행하려면:
-
-```powershell
-python -m crawling.bitlock_crawler
-```
-
-scheduler:
-
-```powershell
-python .\scheduler\scheduler.py
-```
-
-소스 상태는 `governance/sources.py`에서 수동 검토 후 변경합니다. import 또는 scheduler build 시 live availability probe를 수행하지 않습니다.
-
-### 6.3 Django analyst dashboard
-
-```powershell
-python .\DjangoProject\manage.py migrate
-python .\DjangoProject\manage.py createsuperuser
-python .\DjangoProject\manage.py runserver 127.0.0.1:8000
-```
-
-브라우저에서 `http://127.0.0.1:8000/`에 접속합니다. 기본 설정에서는 미인증 사용자가 login 화면으로 이동합니다.
-
-### 6.4 Elasticsearch / Kibana
-
-```powershell
-docker compose up -d elasticsearch kibana
-python scripts/setup_elk.py --wait 120
-docker compose --profile sync up -d monstache
-python scripts/check_elk_pipeline.py --wait 120
-```
-
-세부 운영 절차와 안전한 정리 방법은 [`elk/operations.md`](elk/operations.md)를 참고하세요.
-
-## 7. Governance 점검
-
-실제 MongoDB에 대해 먼저 read-only 점검만 수행합니다.
-
-```powershell
-python scripts/check_governance.py
-```
-
-감사로그 정기 검토 예제(기본 최근 30일, aggregate only):
-
-```powershell
-python scripts/review_audit.py
-python scripts/review_audit.py --days 30 --json
-```
-
-Django에서는 `is_staff=True` 계정만 `/governance/audit-review/`를 조회할 수 있습니다. 일반 Analyst는 dashboard/event detail만 조회합니다.
-
-retention 대상 수만 확인하는 DRY RUN:
-
-```powershell
-python scripts/apply_retention.py
-```
-
-기본 동작에서는 문서를 삭제하지 않습니다. 실제 `--apply`는 테스트/운영 정책을 별도로 확인한 뒤에만 사용해야 합니다.
-
-프로젝트 기본 retention 값은 다음과 같으며 **법정 보유기간이 아닙니다**.
-
-- `leaked_data`: 365일 (`last_seen`, 없으면 `scraped_time`)
-- `leak_history`: 365일 (`changed_at`)
-- `alert_log`: 180일 (`updated_at`, 없으면 `created_at`)
-
-## 8. 테스트와 검증
-
-Offline regression:
-
-```powershell
-python -m unittest discover -v
-python .\DjangoProject\manage.py test mongoDbConnect -v 2
-python .\DjangoProject\manage.py check
-python scripts/check_secrets.py
-python scripts/check_runtime_config.py
-git diff --check
-```
-
-최종 회귀 검증:
-
-- root unittest: **PASS**
-- Django `mongoDbConnect`: **81 PASS**
-- Django system check: **0 issues**
-- secret / runtime configuration check: **PASS**
-- Docker Compose configuration: **PASS**
-- MongoDB → Monstache → Elasticsearch / Kibana E2E: **PASS**
-- governance read-only check / retention DRY RUN: **PASS**
-
-자동 테스트만으로 완료 판정하지 않고 실제 PC에서 다음 E2E도 확인했습니다.
-
-- MongoDB → Monstache → Elasticsearch 최초 동기화
-- 실행 중 변경의 realtime 반영
-- Monstache 중단 중 발생한 변경의 재시작 후 resume
-- Kibana Data View 3개 / Dashboard 5개 패널 / Saved Objects export
-- 실제 MongoDB governance read-only check와 retention DRY RUN
-- Django 미인증 차단 → 로그인 → 조회 → 로그아웃 → 재차단
-- audit log의 로그인/로그아웃/접근 이벤트
-
-검증 시나리오와 발견된 통합 문제는 [`docs/validation.md`](docs/validation.md)에 정리했습니다.
-
-## 9. 안전 경계와 제한사항
-
-이 프로젝트에서 수행하지 않은 것들은 다음과 같습니다.
-
-- CAPTCHA 우회
-- 탈취 credential 재사용
-- 피해 시스템 인증/접근 시도
-- 유출 원문 파일·첨부파일 다운로드
-- raw HTML 영구 저장
-- source가 `UNAVAILABLE`이라는 이유만으로 위협 행위자의 실제 활동 종료를 단정
-- 모든 개인정보/비밀정보를 탐지하는 완전한 DLP 기능을 주장
-- retention 값을 법적 의무 기간으로 주장
-
-또한 crawler selector는 대상 사이트 구조 변경에 영향을 받을 수 있으며, 현재 scheduler의 live source는 Bitlock 1개입니다. 나머지 parser는 offline fixture와 재현성을 위해 보존되어 있습니다.
-
-## 10. 개선 과정에서 중요했던 설계 판단
-
-- **중복 제거보다 identity 안정성을 우선**: 기존 parser ID는 유지하고 별도 `event_key`를 도입했습니다.
-- **CVE처럼 단정하지 않고 관찰 사실을 분리**: 현재 상태와 변경 이력을 별도 collection으로 유지합니다.
-- **알림은 모든 변경이 아니라 material change 중심**: 날짜만 바뀌는 등 비본질적 변경은 억제할 수 있습니다.
-- **분석용 Elasticsearch에는 필요한 필드만 투영**: Mongo 내부 delivery state/private field를 제외합니다.
-- **삭제는 자동화보다 안전장치를 우선**: retention은 read-only check와 DRY RUN이 기본입니다.
-- **죽은 crawler를 삭제하지 않고 lifecycle로 관리**: 재현 가능한 parser/fixture는 남기되 자동 실행 대상에서 제외합니다.
-
-이 판단들의 구체적인 배경과 trade-off는 [`docs/architecture.md`](docs/architecture.md)에 있습니다.
-
-## 11. 프로젝트 결과
-
-초기 크롤링 프로젝트를 단순한 "게시글 수집기"에서 다음 흐름을 가진 운영형 보안 프로젝트로 확장했습니다.
-
-```text
-수집 → 정규화 → 사건 식별 → 중복 제거 → 변경 이력
-    → 위험도 분류 → 알림 → 분석 UI / ELK
-    → 접근통제 / 감사 / 보유기간 / 사고대응
-```
-
-핵심은 기능 수를 늘리는 것보다 **같은 사건을 안정적으로 추적하고, 변경을 근거와 함께 남기며, 분석 표면에 필요한 데이터만 노출하고, 실제 장애/재시작 상황까지 검증한 것**입니다.
-
+- [검증 시나리오와 기록](docs/validation.md)
+- [ELK 구성 및 재현 절차](elk/operations.md)
+- [Kibana 대시보드 명세](elk/kibana_dashboard_spec.md)
+- [데이터 처리·운영 정책](governance/data_handling.md)
+- [프로젝트 사고 대응 절차](governance/incident_response.md)
+- [기술 구조와 설계 판단](docs/architecture.md)

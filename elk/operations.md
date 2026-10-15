@@ -86,7 +86,7 @@ Monstache는 sync profile에 있으므로 **setup 완료 후** 명시적으로 �
 프로젝트 최상단에서 실행합니다. 오류가 나오면 다음 쓰기 단계 전에 오류를 해결합니다.
 기존 .env의 DB_URI는 그대로 사용하고 비밀값을 출력하지 않습니다.
 현재 가상환경의 Python을 사용하세요. py가 다른 인터프리터를 선택하면 python으로 바꿉니다.
-Work에서는 아래 실제 서비스 명령을 실행하지 않았습니다.
+아래 명령은 Windows PC 환경에서의 재현 절차입니다. 명령을 문서화한 것만으로 실제 실행이 완료되었다고 판단하지 않으며, 결과는 실행 로그와 [검증 기록](../docs/validation.md)을 통해 확인합니다.
 
 ### 1. 코드 및 환경 검사
 
@@ -105,7 +105,7 @@ Node가 설치되어 있으면 추가로 변환 스크립트를 검사할 수 �
 node --test tests/test_elk_projection.js
 ~~~
 
-Node는 Work 변환 검사에 사용했으며 Python 도구 실행을 위한 신규 dependency는 아닙니다.
+Node는 선택적 JavaScript projection 검사용이며 Python 앱 실행 자체의 필수 의존성은 아닙니다.
 
 ### 2. 테스트 DB/접두사 선택
 
@@ -188,7 +188,7 @@ py scripts/elk_e2e.py verify --database elk_e2e --revision 3 --wait 120
 http://127.0.0.1:5601/ 에서 Data views의 인덱스 패턴이 elk-e2e-*인지 확인합니다.
 전역 시간 범위에 테스트 시각을 포함하고 elk/kibana_dashboard_spec.md대로 패널 5개를 만듭니다.
 실행 중인 Kibana의 Saved Objects Export로 NDJSON을 생성합니다.
-Work에서 dashboard 생성/Export가 완료됐다고 판정하지 않습니다.
+Kibana의 대시보드 작성·Export 완료 여부는 실제 UI에서 생성된 Saved Objects 파일과 검증 기록으로 확인합니다.
 
 ### 8. 테스트 종료와 운영 설정
 

@@ -4,14 +4,14 @@
 
 ## 1. Offline regression
 
-최종 거버넌스 기준 실제 PC에서 다음을 다시 확인했습니다.
+아래 표는 **기존 프로젝트에서 기록한 검증 결과를 문서화한 것**이며, 이번 문서 정리 중 테스트를 재실행한 결과가 아닙니다. README에 기록된 최종 Django 테스트는 **81 PASS**이고, 종전 문서에 남아 있던 **77 PASS는 이전 검증 단계의 기록**입니다. 실행 시점이나 환경이 다른 수치를 현재 결과처럼 혼합하지 않습니다.
 
 | 검증 | 결과 |
 | --- | ---: |
-| root `unittest discover` | 266 PASS |
-| Django `mongoDbConnect` | 77 PASS |
+| root `unittest discover` | PASS (이전 검증 기록: 266 PASS) |
+| Django `mongoDbConnect` | 81 PASS (README에 기록된 최종 결과; 이전 단계는 77 PASS) |
 | Django `manage.py check` | 0 issues |
-| governance 전용 unittest | 72 PASS |
+| governance 전용 unittest | PASS (이전 검증 기록: 72 PASS) |
 | secret checker | PASS |
 | runtime config checker | PASS |
 | `git diff --check` | PASS |
