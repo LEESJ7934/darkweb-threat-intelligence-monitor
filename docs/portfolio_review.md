@@ -23,7 +23,7 @@ GAP Matrix의 `GAP→PARTIAL`은 최초·개선 이력이 섞인 표현입니다
 | Kibana Events | 유지·접힌 상세 | 당시 문서 조회와 동기화 결과. 전체 수집 완전성 증명 아님 |
 | Kibana 변경 이력 | 유지·접힌 상세 | 게시일 before/after. 조직 감사로그 불변성 증명 아님 |
 
-새 스크린샷은 필수로 요청하지 않습니다. 기존 Excel·Audit Review와 8개 Markdown 문서가 판단 흐름을 뒷받침합니다. GitHub 대표 PNG는 기존 공개용 원본 전달 후 `docs/images/01-isms-overview.png`, `02-risk-register.png`, `03-audit-review.png`, `04-dashboard.png` 순으로 README 7절에 넣습니다. 노션의 기존 이미지·Excel 파일은 보존합니다.
+새 스크린샷은 필수로 요청하지 않습니다. 기존 Excel·Audit Review와 8개 Markdown 문서가 판단 흐름을 뒷받침합니다. 2차에는 기존 공개용 원본의 `docs/images/01-isms-dashboard.png`, `02-risk-register.png`, `03-audit-review.png` 3장을 README 7절에 반영했습니다. 노션의 기존 이미지·Excel 파일은 보존합니다.
 
 ## 남은 한계와 면접 확인
 
@@ -38,3 +38,7 @@ GAP Matrix의 `GAP→PARTIAL`은 최초·개선 이력이 섞인 표현입니다
 ## 2차 제출본 반영 — 2026-10-21
 
 기존 Excel 현황·위험평가·Audit Review 화면 3장을 원본 변경 없이 README에 연결했습니다. 조직 통제 운영과 기능 구현의 구분, 자체 선정 21개 교육용 모의진단 및 남은 GAP을 유지했습니다.
+
+### 2차 문서 검증 결과
+
+README·이미지 목록의 상대 경로와 `git diff --check`, 기존 `scripts/check_secrets.py`를 확인했습니다. 공개 PNG는 HTTP 200과 로컬 원본 바이트 일치를 확인했습니다. 애플리케이션 코드는 변경하지 않았으며 기존 Django 81 PASS를 새 실행 결과로 바꾸지 않았습니다.
