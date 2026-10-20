@@ -34,3 +34,7 @@ GAP Matrix의 `GAP→PARTIAL`은 최초·개선 이력이 섞인 표현입니다
 - 초기 팀 기간 2025.11~2025.12와 이후 개인적으로 정리한 자체 모의진단·후속 개선을 구분. 확인되지 않은 기여율·팀원 분담 수치 없음.
 
 채용공고·공개 사례 조사와 두 프로젝트의 공통 편집 기준은 [통합 검토 기록](https://github.com/LEESJ7934/infrastructure-security-scanner/blob/docs/consulting-portfolio-20261021/docs/portfolio_review.md)을 참고합니다. 공개 사례를 합격 보장 근거로 사용하지 않습니다.
+
+## 2차 제출본 반영 — 2026-10-21
+
+기존 Excel 현황·위험평가·Audit Review 화면 3장을 원본 변경 없이 README에 연결했습니다. 조직 통제 운영과 기능 구현의 구분, 자체 선정 21개 교육용 모의진단 및 남은 GAP을 유지했습니다.

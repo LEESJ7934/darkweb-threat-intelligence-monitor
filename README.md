@@ -129,6 +129,15 @@ python DjangoProject/manage.py runserver 127.0.0.1:8000
 
 Django 조회에는 구성된 MongoDB와 인증 계정이 필요합니다. MongoDB·Monstache·Elasticsearch·Kibana 구성은 [ELK 운영 절차](elk/operations.md)를 따릅니다. 실제 수집·알림 실행은 설정과 승인된 실습 환경을 확인한 뒤 수행하며 문서 점검 목적으로 외부 메시지를 보내지 않습니다.
 
-대표 화면은 기존 노션의 **Excel 모의진단 현황 → 위험평가 → Audit Review → Django 분석 화면** 순서로 읽습니다. 신규 재촬영 없이 기존 판단 근거를 활용합니다. Excel의 구현 상태와 검증 완료 상태를 구별하고, 화면의 194건은 해당 시점 조회 건수이며 침해 확정 건수·탐지 정확도·현재 운영량이 아닙니다. GitHub 공개 PNG는 원본 확인·식별정보 검토 후 추가하며 아직 없는 이미지 링크는 넣지 않습니다.
+### 대표 판단 근거
 
-[기존 이미지 검토와 추가 제출 위치](docs/portfolio_review.md)
+![ISMS-P 자체 모의진단 현황](docs/images/01-isms-dashboard.png)
+기존 Excel 화면(기준일 2026-10-07)의 정보자산 15개·통제항목 21개·위험 12개를 확인합니다. PARTIAL 18·GAP 2·CONDITIONAL 1은 프로젝트 자체 평가이며 인증 적합률이 아닙니다. 원본 구현 상태와 구현·검증 완료 상태를 구별합니다.
+
+![정보자산·통제·위험 시나리오·평가·처리 방향 연결](docs/images/02-risk-register.png)
+R-01 권한 과다, R-04 감사로그 미검토 등의 자산·통제·위험·처리 방향을 연결했습니다. 점수는 프로젝트 상대평가이며 측정된 조직 위험 감소율이 아닙니다. 작은 글자는 이미지를 열어 확대하거나 [Risk Register 원문](docs/isms_p/04_risk_register.md)으로 확인할 수 있습니다.
+
+![집계 기반 Audit Review의 접근 거부 임계치 판단](docs/images/03-audit-review.png)
+기존 검증 화면의 최근 30일 접근 거부 24건이 기준 5건을 넘어 ATTENTION으로 표시됩니다. 검토 기능 동작의 증거이며 담당자의 월간 검토·승인 완료 증거는 아닙니다.
+
+Django 분석·사건 목록·Telegram·Kibana 화면은 [노션 기술적 기반 영역](https://www.notion.so/10ffef567359805dbd87fc484ec71789)에 보존했습니다. 당시 194건은 사건 메타데이터 조회 건수이며 침해 확정 건수·탐지 정확도·현재 운영량이 아닙니다. [공개 이미지 목록](docs/images/README.md)과 [검토 기록](docs/portfolio_review.md)을 함께 제공합니다.
