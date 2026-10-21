@@ -3,7 +3,7 @@
 
 | 항목 | 항목명 | 판정 | 현재 상태/증적 | GAP | 개선 방향 |
 |---|---|---|---|---|---|
-| 1.1.4 | 범위 설정 | PARTIAL | architecture/project story 존재 | 인증범위 형식의 문서 부족 | `00_scope.md` 작성 |
+| 1.1.4 | 범위 설정 | PARTIAL | `docs/architecture.md` 및 `00_scope.md`에 범위·설계 근거 기록 | 인증범위 형식의 문서 부족 | `00_scope.md` 작성 |
 | 1.2.1 | 정보자산 식별 | GAP→PARTIAL | 기능별 파일은 있으나 자산대장 없음 | 중요도·데이터유형 연결 부족 | `01_asset_inventory.md` 작성 |
 | 1.2.2 | 현황 및 흐름분석 | PARTIAL | architecture 존재 | trust boundary와 데이터 이동 분석 부족 | `02_data_flow.md` 작성 |
 | 1.2.3 | 위험 평가 | GAP→PARTIAL | `alert/risk.py`는 사건 위험도 분류 | 조직 정보보호 Risk Register 부재 | 별도 5x5 위험평가 작성 |
@@ -11,7 +11,7 @@
 | 1.3.1 | 보호대책 구현 | PARTIAL | redaction/auth/retention/audit/ELK | 위험평가와 구현 근거 연결 약함 | evidence index 연결 |
 | 1.3.3 | 운영현황 관리 | PARTIAL | runtime/governance checker | 정기 수행 주기·책임자 기록 부재 | 운영 checklist/검토 기록 유지 |
 | 1.4.2 | 관리체계 점검 | GAP | 기능 테스트는 수행 | 관리체계 관점 정기 자체점검 부재 | 본 GAP matrix를 정기 검토 baseline으로 사용 |
-| 1.4.3 | 관리체계 개선 | PARTIAL | Day별 개선·회귀 기록 | corrective action tracking 형식 부족 | treatment 상태/잔여위험 기록 |
+| 1.4.3 | 관리체계 개선 | PARTIAL | `docs/validation.md`와 회귀 테스트 기록 | corrective action tracking 형식 부족 | treatment 상태/잔여위험 기록 |
 | 2.5.1 | 사용자 계정 관리 | PARTIAL | Django auth | 일반 사용자 간 역할구분 부족 | Analyst/Security Admin 최소 RBAC |
 | 2.5.3 | 사용자 인증 | PARTIAL | 로그인/CSRF/secure-cookie opt-in | MFA/login throttling 미구현 | 운영 도입 시 강화 필요 |
 | 2.5.5 | 특수 계정 및 권한관리 | GAP→PARTIAL | staff account 사용 가능 | 관리자 용도 명시·화면 분리 부족 | Security Admin-only audit review |
