@@ -3,7 +3,6 @@
 
 다크웹 게시글의 **필요한 메타데이터만 수집**해 사건의 재관찰·변경 이력을 관리하고, 알림·조회·분석 기능에 **접근통제·감사·보유기간 검토**를 연결한 프로젝트입니다.
 
-**[노션 포트폴리오: 담당 역할·GAP 개선 사례·실행 화면 보기](https://app.notion.com/p/10ffef567359805dbd87fc484ec71789)**
 
 | 구분 | 내용 |
 |---|---|
@@ -86,6 +85,5 @@ flowchart LR
 - [아키텍처와 주요 설계 판단](docs/architecture.md) · [단위·통합 검증 및 한계](docs/validation.md)
 - [통제항목별 근거](docs/isms_p/06_evidence_index.md) · [프로젝트 사고 대응 절차](governance/incident_response.md)
 - [CI 워크플로](.github/workflows/ci.yml) · [Kibana 대시보드 구성 파일](elk/kibana_dashboard.ndjson)
-- **스크린샷·모의진단 Excel 대시보드·본인 담당 역할:** [노션 상세 포트폴리오](https://app.notion.com/p/10ffef567359805dbd87fc484ec71789)
 
 검증 기록은 수행한 환경·시점에 한정됩니다. 모든 다크웹 소스의 현재 가용성, 법률 준수, ISMS-P 인증 적합성을 보장하지 않습니다.
