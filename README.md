@@ -42,7 +42,7 @@
 - `leaked_data`: 사건 현재 상태 / `leak_history`: 변경 이력 / `alert_log`: 알림·전송 상태
 - 현재 자동 스케줄 대상은 **Bitlock 1개**입니다. 나머지 source parser는 오프라인 재현·테스트용으로 보관하며, 실제 위협 조직의 활동 종료를 뜻하지 않습니다.
 - 프로젝트의 위험도 분류는 **수집 게시글의 우선 검토 수준**을 의미하며 실제 침해나 피해를 확정하지 않습니다.
-- 상세 설계·트레이드오프는 [architecture.md](docs/architecture.md), 기능별 통제·증거·한계는 [control_matrix.md](governance/control_matrix.md)에 있습니다.
+- 기술 설계 판단은 [아키텍처](docs/architecture.md), 통제항목별 상태·증적·검증 한계는 [ISMS-P GAP Matrix](docs/isms_p/03_control_gap_matrix.md)와 [Evidence Index](docs/isms_p/06_evidence_index.md)로 정리했습니다.
 
 ## 4. ISMS-P 통제항목 기반 자체 모의진단
 
@@ -91,9 +91,7 @@ python scripts/check_runtime_config.py
 
 실제 인증정보는 `.env`에만 저장하고 Git에 커밋하지 않습니다. 정식 Django 진입점은 `DjangoProject/manage.py`입니다.
 
-- [검증 시나리오와 기록](docs/validation.md)
-- [ELK 구성 및 재현 절차](elk/operations.md)
-- [Kibana 대시보드 명세](elk/kibana_dashboard_spec.md)
-- [데이터 처리·운영 정책](governance/data_handling.md)
-- [프로젝트 사고 대응 절차](governance/incident_response.md)
-- [기술 구조와 설계 판단](docs/architecture.md)
+- [설계·아키텍처](docs/architecture.md) · [검증 결과와 한계](docs/validation.md)
+- [ISMS-P 모의진단 GAP Matrix](docs/isms_p/03_control_gap_matrix.md) · [위험평가](docs/isms_p/04_risk_register.md) · [Evidence Index](docs/isms_p/06_evidence_index.md)
+- [프로젝트용 사고 대응 절차](governance/incident_response.md)
+- ELK 동기화 설정과 대시보드 구성은 `elk/` 코드 및 `elk/kibana_dashboard.ndjson`에서 확인할 수 있습니다.
