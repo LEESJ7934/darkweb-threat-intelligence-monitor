@@ -4,7 +4,7 @@
 
 ## 1. Offline regression
 
-아래 표는 **기존 프로젝트에서 기록한 검증 결과를 문서화한 것**이며, 이번 문서 정리 중 테스트를 재실행한 결과가 아닙니다. README에 기록된 최종 Django 테스트는 **81 PASS**이고, 종전 문서에 남아 있던 **77 PASS는 이전 검증 단계의 기록**입니다. 실행 시점이나 환경이 다른 수치를 현재 결과처럼 혼합하지 않습니다.
+아래는 당시 테스트 기록이다. Django 테스트는 최종 기록 기준 **81 PASS**이며, **77 PASS는 이전 단계 결과**다. 수치는 해당 실행 환경과 시점에 한정되며 현재 서비스 상태를 나타내지는 않는다.
 
 | 검증 | 결과 |
 | --- | ---: |
@@ -38,7 +38,7 @@ live source availability와 parser correctness는 같은 문제가 아니므로 
 
 ## 3. Telegram alert E2E
 
-실제 PC에서 합성 사건을 사용해 NEW와 UPDATED 알림을 검증했습니다.
+로컬 통합 테스트에서 합성 사건으로 NEW와 UPDATED 알림을 검증했다.
 
 확인 항목:
 
@@ -147,11 +147,11 @@ JavaScript projection의 `iso()`가 실제 Monstache/Otto 런타임에서 BSON d
 
 Dashboard와 관련 Lens/Saved Search/Data View를 함께 export했으며 `elk/kibana_dashboard.ndjson`에 저장했습니다.
 
-## 8. Governance 실제 PC 검증
+## 8. 로컬 환경 운영 통제 검증
 
 운영 DB에는 destructive test를 하지 않았습니다.
 
-실제로 수행한 검증:
+확인한 항목:
 
 - `check_governance.py`: MongoDB read-only retention/금지 field/source registry 검사
 - `apply_retention.py`: DRY RUN, `deleted=0`
