@@ -1,12 +1,10 @@
 # Architecture & Design Decisions
 
-> 이 문서는 **개발·설계 상세 근거**입니다. 프로젝트 목적과 관리체계 자체진단 결과는 [README](../README.md) 및 [ISMS-P 모의진단](isms_p/03_control_gap_matrix.md)에서, 테스트·검증 범위는 [validation.md](validation.md)에서 확인합니다. 여기서는 기술적 선택의 이유와 한계를 기록합니다.
-
-이 문서는 구현된 코드에서 중요한 설계 판단과 trade-off를 설명합니다. 기능 목록보다 **왜 이렇게 나눴는지**에 초점을 둡니다.
+프로젝트에서 기능을 분리한 이유와 구현상 판단을 정리했다. 전체 기능은 [README](../README.md), ISMS-P 점검 결과는 [GAP Matrix](isms_p/03_control_gap_matrix.md), 테스트 결과는 [검증 기록](validation.md)에서 확인할 수 있다.
 
 ## 1. crawler / parser / storage 분리
 
-초기 크롤러는 browser 제어, HTML parsing, MongoDB 저장 책임이 한 파일에 섞이기 쉬웠습니다. 현재는 다음 경계를 둡니다.
+브라우저 실행, HTML 파싱, MongoDB 저장을 각각 분리했다. 처리 순서는 다음과 같다.
 
 ```text
 browser/rendering
