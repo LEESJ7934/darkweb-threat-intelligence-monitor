@@ -10,7 +10,7 @@
 | 2.5.1/2.5.5 | `governance/django_controls.py`, `views.py`, Django governance tests | Analyst/Admin 최소 권한분리 | MFA/SSO/정기 account recertification |
 | 2.9.4 | `governance/audit.py`, `logs/audit.jsonl`(runtime) | allowlisted audit, pseudonym, rotation | 중앙수집/변조방지 |
 | 2.9.5 | `governance/audit_review.py`, `scripts/review_audit.py`, `governance_review.html`, tests | 주기적 aggregate review 기준·도구 | 실제 조직의 월간 승인 기록 |
-| 2.10.1 | `elk/operations.md`, `scripts/check_elk_pipeline.py` | ELK 운영·검증 절차 | 조직 변경관리 승인체계 |
+| 2.10.1 | `scripts/check_elk_pipeline.py`, `docs/validation.md`, `elk/project_document.js` | ELK 필드 제한 및 통합 검증 결과 | 조직 변경관리 승인체계 |
 | 2.11.1 | `governance/incident_response.md` | 프로젝트 대응 절차 | 실제 연락망/법적 신고 판단 |
 | 2.11.3 | `alert/service.py`, `alert/risk.py`, `elk/` | 위협 metadata 모니터링·alert | 전체 인프라 SIEM coverage |
 | 3.4.1 | `governance/retention.py`, `scripts/apply_retention.py` | safe retention/dry-run | 법적 보유기간 적정성 |
