@@ -663,7 +663,7 @@ import os, sys, types
 from unittest.mock import patch, Mock
 os.environ['DJANGO_SETTINGS_MODULE'] = 'DjangoProject.settings'
 os.environ['DJANGO_DEBUG'] = 'True'
-sys.path.insert(0, 'DjangoProject')
+sys.path.insert(0, 'dashboard')
 fake = types.ModuleType('telegram')
 fake.Bot = Mock(side_effect=AssertionError('Bot import side effect'))
 with patch.dict(sys.modules, {'telegram': fake}), \\
