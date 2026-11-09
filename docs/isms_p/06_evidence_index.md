@@ -18,5 +18,5 @@
 ## 테스트 증적
 
 - `tests/test_governance.py`: audit/retention/redaction/source lifecycle 및 Audit Review 단위 테스트
-- `DjangoProject/mongoDbConnect/tests_governance.py`: 로그인·CSRF·RBAC·Security Admin Audit Review 테스트
+- `dashboard/mongoDbConnect/tests_governance.py`: 로그인·CSRF·RBAC·Security Admin Audit Review 테스트
 - 기존 최종 E2E 로그/스크린샷은 실제 Mongo/Telegram/ELK/Django 통합 증적으로 별도 보관
