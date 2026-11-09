@@ -40,7 +40,7 @@ subprocess.check_call(["git","mv","DjangoProject","dashboard"],cwd=root)
 
 changed=[]
 for p in root.rglob("*"):
-    if not p.is_file() or ".git" in p.parts or p.name=="_temporary_refactor.py":
+    if not p.is_file() or ".git" in p.parts or p.name=="_temporary_refactor.py" or ".github/workflows" in str(p):
         continue
     if p.suffix.lower() not in {".py",".html",".css",".js",".json",".md",".txt",".yml",".yaml",".toml",".sh",".env",".example"} and p.name not in {"Dockerfile",".gitignore",".gitattributes"}:
         continue
