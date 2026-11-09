@@ -1,0 +1,25 @@
+name: 임시 구조 개선 실행
+
+on:
+  push:
+    branches:
+      - refactor/public-repository-structure-20261109
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 참조 확인 후 파일 삭제와 폴더 이름 교체
+        run: python scripts/_temporary_refactor.py
