@@ -42,7 +42,7 @@ flowchart TB
 | 수집 · 정규화 | 수집기와 파서 분리, 메타데이터 allowlist, redaction | `crawling/` |
 | 사건 이력 | `event_key`·`content_fingerprint`로 재관찰과 실제 내용 변경 구별 | `crawling/`, `docs/architecture.md` |
 | 알림 처리 | NEW/UPDATED/SUPPRESSED, 중복 방지·전송 상태 관리 | `alert/` |
-| 조회 · 권한 | Django 로그인, Analyst/Security Admin 권한 구분 | `DjangoProject/`, `governance/` |
+| 조회 · 권한 | Django 로그인, Analyst/Security Admin 권한 구분 | `dashboard/`, `governance/` |
 | 검색 · 분석 | MongoDB에서 허용 필드만 ELK에 투영 | `monstache/`, `elk/` |
 | 운영 통제 | 감사로그 점검, retention DRY RUN, 설정·비밀정보 점검 | `governance/`, `scripts/` |
 

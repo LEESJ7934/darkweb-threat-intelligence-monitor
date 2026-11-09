@@ -248,12 +248,12 @@ from unittest.mock import patch
 sys.path.insert(0, %r)
 with patch('dotenv.load_dotenv'), patch('socket.socket.connect', side_effect=AssertionError('network')):
     try:
-        from DjangoProject import settings
+        from web_config import settings
     except Exception as error:
         print(type(error).__name__ + ': ' + str(error))
         sys.exit(1)
     print(settings.DASHBOARD_REQUIRE_AUTH, settings.SESSION_COOKIE_SECURE)
-""" % "DjangoProject"
+""" % "dashboard"
         return subprocess.run([sys.executable, "-c", script], cwd=ROOT, env=env,
                               capture_output=True, text=True, timeout=30)
 

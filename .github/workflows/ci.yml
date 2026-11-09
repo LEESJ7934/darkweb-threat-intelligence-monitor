@@ -26,7 +26,7 @@ jobs:
           cache: pip
       - run: python -m pip install -r requirements.txt
       - run: python -m unittest discover -v
-      - run: python DjangoProject/manage.py test mongoDbConnect -v 2
-      - run: python DjangoProject/manage.py check
+      - run: python dashboard/manage.py test mongoDbConnect -v 2
+      - run: python dashboard/manage.py check
       - run: python scripts/check_secrets.py
       - run: python -m compileall -q crawling alert governance scheduler DjangoProject elk scripts tests
