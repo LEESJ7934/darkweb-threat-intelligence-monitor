@@ -4,8 +4,6 @@
 
 **게시글의 메타데이터 관찰·변경 이력을 관리하는 팀 프로젝트**, 그리고 **해당 시스템을 대상으로 한 개인 후속 ISMS-P 모의진단**입니다.
 
-> **범위:** 다크웹 게시글의 주장을 확인된 침해 사고로 확정하지 않습니다. 실제 피해자 데이터·자격증명 수집이나 고객사 인증심사가 아닌 팀 개발·자체 실습입니다.
-
 **바로 보기:** [관리체계 대표 GAP 2건](docs/isms_p/recruiting-case-brief.md) · [실습 검증 기록](docs/validation.md) · [위험등록부 12개 시나리오](docs/isms_p/04_risk_register.md) · [모의 인터뷰·증적 질문](docs/isms_p/recruiting-mock-audit-interview.md) · [Notion 프로젝트](https://app.notion.com/p/10ffef567359805dbd87fc484ec71789)
 
 ## 1. 팀 프로젝트와 개인 후속 작업 구분
