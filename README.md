@@ -4,7 +4,7 @@
 
 **게시글의 메타데이터 관찰·변경 이력을 관리하는 팀 프로젝트**, 그리고 **해당 시스템을 대상으로 한 개인 후속 ISMS-P 모의진단**입니다.
 
-**바로 보기:** [관리체계 대표 GAP 2건](docs/isms_p/recruiting-case-brief.md) · [실습 검증 기록](docs/validation.md) · [위험등록부 12개 시나리오](docs/isms_p/04_risk_register.md) · [모의 인터뷰·증적 질문](docs/isms_p/recruiting-mock-audit-interview.md) · [Notion 프로젝트](https://app.notion.com/p/10ffef567359805dbd87fc484ec71789)
+**바로 보기:** [ISMS-P GAP Matrix](docs/isms_p/03_control_gap_matrix.md) · [실습 검증 기록](docs/validation.md) · [위험등록부 12개 시나리오](docs/isms_p/04_risk_register.md) · [증적 인덱스](docs/isms_p/06_evidence_index.md) · [Notion 프로젝트](https://app.notion.com/p/10ffef567359805dbd87fc484ec71789)
 
 ## 1. 팀 프로젝트와 개인 후속 작업 구분
 
