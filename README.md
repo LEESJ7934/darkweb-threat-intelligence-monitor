@@ -1,76 +1,59 @@
-# 다크웹 위협정보 모니터링 및 보안 통제 점검
-
-> **2026 신입 관리체계 컨설팅 지원 자료**  
-> [ISMS-P 대표 GAP·개선 사례 2건](docs/isms_p/recruiting-case-brief.md) · [모의 인터뷰·증적 검토 및 면접 12문답](docs/isms_p/recruiting-mock-audit-interview.md)  
-> 3인 팀 시스템 개발과 개인 후속 21개 통제 **자체 모의진단**을 구분하며, 실제 인증심사 수행은 아닙니다.
+# 다크웹 위협정보 모니터링 및 ISMS-P 자체 모의진단
 
 [![CI](https://github.com/LEESJ7934/darkweb-threat-intelligence-monitor/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/LEESJ7934/darkweb-threat-intelligence-monitor/actions/workflows/ci.yml)
 
-다크웹 게시글에서 **필요한 메타데이터만 수집**하고, 동일 사건의 재관찰과 내용 변경을 구분해 알림·조회·검색으로 연결한 프로젝트입니다. 후속 작업에서는 데이터 흐름을 바탕으로 **접근통제, 감사로그, 보유기간, ISMS-P 통제항목별 증적과 개선 과제**를 점검했습니다.
+**게시글의 메타데이터 관찰·변경 이력을 관리하는 팀 프로젝트**, 그리고 **해당 시스템을 대상으로 한 개인 후속 ISMS-P 모의진단**입니다.
 
-**먼저 확인하기:** [시스템 설계](docs/architecture.md) · [테스트 및 실제 통합 검증](docs/validation.md) · [ISMS-P 자체 모의진단 결과](docs/isms_p/07_final_assessment.md) · [통제별 증적](docs/isms_p/06_evidence_index.md)
+> **범위:** 다크웹 게시글의 주장을 확인된 침해 사고로 확정하지 않습니다. 실제 피해자 데이터·자격증명 수집이나 고객사 인증심사가 아닌 팀 개발·자체 실습입니다.
 
-## 핵심 구현과 검증 결과
+**바로 보기:** [관리체계 대표 GAP 2건](docs/isms_p/recruiting-case-brief.md) · [실습 검증 기록](docs/validation.md) · [위험등록부 12개 시나리오](docs/isms_p/04_risk_register.md) · [모의 인터뷰·증적 질문](docs/isms_p/recruiting-mock-audit-interview.md) · [Notion 프로젝트](https://app.notion.com/p/10ffef567359805dbd87fc484ec71789)
 
-| 구분 | 결과 |
-| --- | --- |
-| 사건 식별·변경 추적 | `event_key`와 콘텐츠 지문을 사용해 동일 관찰과 변경 이력 구별 |
-| 알림 처리 | `NEW / UPDATED / SUPPRESSED` 구분, 중복 발송 방지 및 전송 상태 관리 |
-| 조회·검색 | Django 인증 기반 대시보드, MongoDB 조회, Monstache를 통한 Elasticsearch/Kibana 검색 |
-| 보안 통제 | 역할별 접근 권한, 감사로그 검토, 데이터 최소화, 보유기간 DRY RUN |
-| 자체 모의진단 | 정보자산 **15개**, 선정 ISMS-P 관련 통제항목 **21개**, 위험 시나리오 **12개** |
-| 자동 테스트 | [2026-11-09 CI](https://github.com/LEESJ7934/darkweb-threat-intelligence-monitor/actions/runs/42602701149) 기준 Python 테스트 **275개**, Django 테스트 **81개** 통과 |
+## 1. 팀 프로젝트와 개인 후속 작업 구분
 
-ISMS-P 결과는 **자체 모의진단**이지 공식 인증이나 외부기관 심사 결과가 아닙니다. 실제 침해 사실을 확인하거나 유출 원문·계정·비밀번호를 수집하는 시스템도 아닙니다.
+| 구분 | 범위 | 구분해야 하는 사항 |
+|---|---|---|
+| **3인 팀 개발** (2025.11~12) | 게시글 수집, MongoDB 저장·이력, Django 조회, 알림, ELK 연계로 구성된 시스템. **본인 담당으로 기록된 부분:** 사이트별 크롤러 개발과 Elasticsearch·Kibana 연계 | 시스템 전체 기능을 본인 단독 개발로 표현하지 않음 |
+| **개인 후속 모의진단** | 시스템 자산·데이터 흐름을 기준으로 관련 ISMS-P 통제 **21개 항목을 선별**, 자산 15개·위험 시나리오 12개와 GAP·대책·증적 연결 | ISMS-P 전체 인증심사나 실제 조직의 공식 적합 판정이 아님 |
+| **후속 코드·운영 통제 보강** | 접근권한 구분, 로그 검토, 알림·보유기간 안전성 등 저장소에서 확인되는 개선 기능 | 변경의 정확한 개인별 기여도는 역할 기록과 커밋 근거로 별도 확인하며, 구현된 기능을 실제 운영 승인과 혼동하지 않음 |
 
-## 개발 배경과 작업 범위
-
-- **팀 프로젝트 (2025.11~12):** 크롤러·MongoDB 저장·알림·Django 조회·ELK 분석 흐름을 기반으로 개발했습니다.
-- **후속 확장:** 사건 식별·변경 추적, 알림 신뢰성, 데이터 최소화와 운영 통제를 개선하고 ISMS-P 관점에서 자산·흐름·위험·증적·개선 대책을 문서화했습니다.
-- **설계 원칙:** 관찰한 게시글의 **주장**과 검증된 침해 **사실**을 구별하고, 재현 가능한 합성 테스트를 운영 데이터와 분리합니다.
-
-기술 스택: **Python, Selenium, Tor SOCKS, MongoDB, Django, Telegram, Monstache, Elasticsearch, Kibana, Docker, GitHub Actions**.
-
-## 시스템 흐름
+## 2. 데이터가 어떻게 처리되는가
 
 ```mermaid
-flowchart TB
-    A["게시글 메타데이터 수집"] --> B["파싱·정규화·민감정보 최소화"]
-    B --> C[("MongoDB 현재 사건·변경 이력")]
-    C --> D["신규·변경·억제 판단"]
-    D --> E["Telegram 알림 및 발송 상태"]
-    C --> F["Django 분석 대시보드"]
-    F --> G["로그인·권한 및 접근 감사"]
-    C --> H["Monstache 허용 필드 투영"]
-    H --> I["Elasticsearch / Kibana"]
-    G -.-> J["로그 검토·보유기간 통제"]
+flowchart LR
+  A[게시글 메타데이터] --> B[수집·정규화·최소화]
+  B --> C[(MongoDB: 사건·이력)]
+  C --> D[NEW / UPDATED / SUPPRESSED]
+  D --> E[Telegram 알림]
+  C --> F[Django 조회]
+  C --> G[Monstache 허용필드]
+  G --> H[Elasticsearch / Kibana]
+  F --> I[접근권한·감사로그]
+  I --> J[읽기 전용 로그 검토]
 ```
 
-| 설계 판단 | 적용 이유 | 코드·상세 근거 |
-| --- | --- | --- |
-| 수집·파싱·저장 분리 | 실제 Onion 접속 없이 HTML fixture로 파서를 반복 테스트 | [크롤러](crawling/) · [설계 판단](docs/architecture.md) |
-| 사건 ID와 변경 이력 분리 | 게시글 재수집을 신규 사고로 중복 처리하지 않도록 제어 | [저장 처리](crawling/storage.py) |
-| 알림 상태·재시도 관리 | 재시작·전송 실패 시 중복 발송과 유실 가능성을 줄임 | [알림 서비스](alert/service.py) |
-| 대시보드 접근통제 | 미인증 접근을 차단하고 Security Admin의 감사 검토 권한을 분리 | [Django 화면](dashboard/) · [거버넌스](governance/) |
-| 검색용 필드 제한 | 내부 운영 필드와 알림 전송 관련 정보가 검색 인덱스에 불필요하게 노출되지 않도록 함 | [Monstache 설정](monstache/) · [ELK](elk/) |
+| 설계 요소 | 이유 | 근거 |
+|---|---|---|
+| `event_key`·`content_fingerprint`·변경 이력 | 재수집과 내용 변경을 구별하고 중복 사건을 줄이기 위해 | [`crawling/storage.py`](crawling/storage.py) · [설계 문서](docs/architecture.md) |
+| `NEW / UPDATED / SUPPRESSED` 알림 관리 | 중복 발송·재시작·비중요 변경을 구분하기 위해 | [`alert/service.py`](alert/service.py) |
+| Django 접근권한 | 일반 분석가와 감사 검토 관리자 기능을 구분하기 위해 | [`governance/`](governance/) |
+| 허용 필드만 검색으로 전달 | 불필요한 내부 필드 전파를 줄이기 위해 | [`monstache/`](monstache/) · [증거](docs/validation.md) |
 
-**현재 자동 스케줄 수집 대상은 Bitlock 하나**입니다. 다른 크롤러는 오프라인 파서 검증·재현 자료로 유지하며, 모든 다크웹 사이트의 현재 접근 가능성을 보장하지 않습니다.
+**검증 범위:** 현재 자동 스케줄 수집 대상은 README 기록상 Bitlock 한 곳이며, 다른 크롤러는 오프라인 파서·fixture 검증 범위가 포함됩니다. 현재 다크웹 사이트 가용성·모든 침해 사실을 보장하지 않습니다.
 
-## ISMS-P 자체 모의진단
+## 3. ISMS-P 자체 모의진단: 대표 GAP 2건
 
-단순히 통제항목 준수 여부를 표시하는 대신, **점검 범위 → 정보자산 → 데이터 흐름 → GAP → 위험평가 → 개선 대책 → 증적 → 재평가**를 연결했습니다.
+모의진단 과정은 **범위 → 자산 15개 → 데이터 흐름 → 21개 선정 통제 → GAP → 위험 시나리오 12개 → 개선·증적 → 재평가**입니다.
 
-| 확인된 GAP | 후속 조치 | 남은 한계 |
-| --- | --- | --- |
-| 일반 분석가와 관리 기능의 권한 구분 부족 | Django Analyst / Security Admin 권한 분리 | MFA·정기 권한 검토 미구현 |
-| 감사로그의 정기 검토 기준 부재 | 최근 30일 로그에 대한 읽기 전용 Audit Review 구현 | 중앙 변조방지 저장·실제 조직 승인 이력 없음 |
-| 운영 위험과 증적 연결 부족 | 위험대장·처리계획·통제별 증적 인덱스 작성 | 조직 차원의 위험 수용·인증 적합성 미검증 |
+| 확인한 GAP | 프로젝트에서 개선한 기능 | 여전히 부족한 증거 |
+|---|---|---|
+| 일반 Analyst와 감사 검토 관리 기능의 권한 구분 미흡 | Django `is_staff` 기반 Security Admin만 감사 검토 기능 접근; 일반 분석가는 거부 응답 | MFA, 실제 조직의 계정·권한 정기 검토 이력 |
+| 감사로그를 만들지만 정기 검토 기준·도구 부족 | 최근 30일 `audit.jsonl*`를 read-only 집계, 이상 이벤트 `ATTENTION` 표시 | 중앙/WORM 로그 보호, 조직 검토·승인/조치 기록, 자동 경보 |
 
-[진단 범위](docs/isms_p/00_scope.md) → [자산 목록](docs/isms_p/01_asset_inventory.md) → [데이터 흐름](docs/isms_p/02_data_flow.md) → [GAP 매트릭스](docs/isms_p/03_control_gap_matrix.md) → [위험대장](docs/isms_p/04_risk_register.md) → [개선계획](docs/isms_p/05_risk_treatment_plan.md) → [증적 인덱스](docs/isms_p/06_evidence_index.md) → [최종 평가](docs/isms_p/07_final_assessment.md)
+**기능 구현과 관리체계 적합 여부는 다릅니다.** `IMPLEMENTED`는 소프트웨어 보강을 의미하고, 해당 ISMS-P 통제를 실제 조직 운영까지 포함하여 완전히 충족했다는 뜻은 아닙니다. 백업·복원 시험(R-06)과 MFA(R-02), 조직 침해사고 훈련(R-11)은 미완료입니다.
 
-## 로컬 테스트와 실행 전 확인
+상세: [모의진단 범위](docs/isms_p/00_scope.md) · [GAP Matrix](docs/isms_p/03_control_gap_matrix.md) · [위험대장](docs/isms_p/04_risk_register.md) · [처리계획](docs/isms_p/05_risk_treatment_plan.md) · [증적 인덱스](docs/isms_p/06_evidence_index.md) · [최종 평가](docs/isms_p/07_final_assessment.md)
 
-Python 3.12를 기준으로 저장소 루트에서 테스트할 수 있습니다.
+## 4. 검증 방법과 실행
 
 ```bash
 python -m pip install -r requirements.txt
@@ -79,12 +62,16 @@ python dashboard/manage.py test mongoDbConnect -v 2
 python dashboard/manage.py check
 ```
 
-실제 MongoDB·Telegram·Elasticsearch·Kibana와 연동하는 경우에는 [`.env.example`](.env.example)을 참고해 **로컬 전용 `.env`**에 필요한 연결 정보를 별도로 설정하고 [환경 검사 코드](scripts/check_runtime_config.py)로 확인해야 합니다. 운영 자격증명은 저장소에 커밋하지 않습니다. 웹 대시보드는 [`dashboard/manage.py`](dashboard/manage.py)를 사용하며, 실서비스 배포용 보안·인증·네트워크 구성을 별도로 검토해야 합니다.
+추가 서비스 연동 시에는 [`.env.example`](.env.example) 및 [`scripts/check_runtime_config.py`](scripts/check_runtime_config.py)를 참고하고, 인증정보는 버전 관리에 포함하지 않습니다.
 
-## 검증 범위와 한계
+**기존 CI 기록:** 2026-11-09 실행에서 Python 단위 테스트 275개·Django 테스트 81개 통과로 README에 기록되어 있습니다. 별도의 [검증 이력 문서](docs/validation.md)에 표시된 266개·77개 등은 이전 실행시점의 숫자이며 이번 수정안을 위해 테스트를 다시 실행한 것은 아닙니다. 합성 데이터 기능 검증과 실제 외부 서비스 통합 시험을 구분합니다.
 
-- [자동 테스트·보안 점검](.github/workflows/ci.yml): 파서·저장·알림·거버넌스 테스트와 Django 점검을 실행합니다.
-- [통합 검증 기록](docs/validation.md): Telegram 알림, 로그인/로그아웃, Monstache direct-read·change-stream·resume, Kibana 구성은 당시 통합 실습 결과입니다. 현재 외부 서비스 가용성을 의미하지 않습니다.
-- 게시글 데이터의 신뢰도, 침해 사실, 개인정보 관련 법률 준수 여부를 자동 확정하지 않습니다.
-- MFA, 정기 권한 검토, 중앙 감사로그 변조방지, 백업·복구 시험 등은 [미완료 개선 항목](docs/isms_p/07_final_assessment.md)에 남겨두었습니다.
-- 프로젝트 코드·설계·진단 산출물은 학습용 및 자체 검증 환경을 기준으로 설명합니다. 운영 보안 서비스 또는 인증 획득 결과로 해석하지 않습니다.
+## 5. 운영 범위와 한계
+
+- 다크웹 게시글에 적힌 '유출 주장'을 확인된 피해 사실로 간주하지 않습니다.
+- 개인정보의 법적 처리 근거 및 보유·파기 적법성을 최종 판단하지 않았습니다.
+- 실제 조직의 MFA·정기 권한검토·중앙 로그 보존·백업 복원·사고대응 훈련을 수행하지 않았습니다.
+- 합성 이벤트·테스트 화면을 실사고 건수나 현재 운영 모니터링 성과로 확대하지 않습니다.
+- 타인 및 외부 기관의 개인정보·비밀정보가 포함된 로그나 원본을 공개하지 않습니다.
+
+[아키텍처](docs/architecture.md) · [검증 원문](docs/validation.md) · [ISMS-P 최종 평가](docs/isms_p/07_final_assessment.md) · [Notion 상세 포트폴리오](https://app.notion.com/p/10ffef567359805dbd87fc484ec71789)
