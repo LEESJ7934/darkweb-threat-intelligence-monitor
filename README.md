@@ -1,5 +1,9 @@
 # 다크웹 위협정보 모니터링 및 보안 통제 점검
 
+> **2026 신입 관리체계 컨설팅 지원 자료**  
+> [ISMS-P 대표 GAP·개선 사례 2건](docs/isms_p/recruiting-case-brief.md) · [모의 인터뷰·증적 검토 및 면접 12문답](docs/isms_p/recruiting-mock-audit-interview.md)  
+> 3인 팀 시스템 개발과 개인 후속 21개 통제 **자체 모의진단**을 구분하며, 실제 인증심사 수행은 아닙니다.
+
 [![CI](https://github.com/LEESJ7934/darkweb-threat-intelligence-monitor/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/LEESJ7934/darkweb-threat-intelligence-monitor/actions/workflows/ci.yml)
 
 다크웹 게시글에서 **필요한 메타데이터만 수집**하고, 동일 사건의 재관찰과 내용 변경을 구분해 알림·조회·검색으로 연결한 프로젝트입니다. 후속 작업에서는 데이터 흐름을 바탕으로 **접근통제, 감사로그, 보유기간, ISMS-P 통제항목별 증적과 개선 과제**를 점검했습니다.
